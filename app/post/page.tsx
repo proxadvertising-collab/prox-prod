@@ -5,12 +5,18 @@ import { createBrowserClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import LocationButton from '@/components/LocationButton'
 
+const CATEGORY_OPTIONS = [
+  'Restaurants', 'Coffee', 'Bars', 'Shopping', 'Services',
+  'Hotels', 'Attractions', 'Street Food', 'Wellness', 'Convenience',
+]
+
 export default function PostDealPage() {
   const [postType, setPostType] = useState<'deal' | 'open'>('deal')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [priceDisplay, setPriceDisplay] = useState('')
   const [originalPrice, setOriginalPrice] = useState('')
+  const [categories, setCategories] = useState<string[]>([])
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [lat, setLat] = useState<number | null>(null)
   const [lng, setLng] = useState<number | null>(null)
@@ -27,6 +33,14 @@ export default function PostDealPage() {
     setLat(latitude)
     setLng(longitude)
     setAccuracy(acc)
+  }
+
+  const toggleCategory = (cat: string) => {
+    setCategories((prev) => {
+      if (prev.includes(cat)) return prev.filter((c) => c !== cat)
+      if (prev.length >= 2) return prev
+      return [...prev, cat]
+    })
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,6 +84,7 @@ export default function PostDealPage() {
       price_display: postType === 'deal' ? priceDisplay : null,
       original_price: postType === 'deal' ? originalPrice || null : null,
       post_type: postType,
+      categories,
       image_url: imageUrl,
       lat, lng,
       expires_at: null,
@@ -122,6 +137,33 @@ export default function PostDealPage() {
         <div>
           <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Title</label>
           <input type="text" required value={title} onChange={(e) => setTitle(e.target.value)} className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-black" placeholder="Offer Title" />
+        </div>
+        <div>
+          <div className="flex justify-between items-center mb-1">
+            <label className="block text-xs font-bold text-gray-700 uppercase">Categories</label>
+            <span className="text-[10px] font-bold text-gray-400">{categories.length}/2</span>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {CATEGORY_OPTIONS.map((cat) => {
+              const selected = categories.includes(cat)
+              const disabled = !selected && categories.length >= 2
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => toggleCategory(cat)}
+                  disabled={disabled}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-opacity ${
+                    selected
+                      ? 'bg-black text-white border-black'
+                      : 'bg-white text-gray-600 border-gray-300'
+                  } ${disabled ? 'opacity-30' : 'opacity-100'}`}
+                >
+                  {cat}
+                </button>
+              )
+            })}
+          </div>
         </div>
         <div>
           <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Description</label>
