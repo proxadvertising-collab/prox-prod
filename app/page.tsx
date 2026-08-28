@@ -5,6 +5,7 @@ import { createBrowserClient } from '@/lib/supabase/client'
 import { calculateDistance } from '@/lib/distance'
 import DealCard from '@/components/DealCard'
 import BottomNav from '@/components/BottomNav'
+import ProxPinThumb from '@/components/ProxPinThumb'
 
 const CATEGORY_CHIPS: { label: string; emoji: string }[] = [
   { label: 'Restaurants', emoji: '🍴' },
@@ -136,31 +137,7 @@ function DistanceSlider({
             setDragging(true)
           }}
         >
-          <div
-            className="relative flex items-center justify-center"
-            style={{
-              width: '36px',
-              height: '36px',
-              background: '#ffffff',
-              borderRadius: '50% 50% 50% 0',
-              transform: 'rotate(45deg)',
-              boxShadow: '0 0 20px rgba(124,58,237,0.6)',
-            }}
-          >
-            <span
-              className="flex items-center justify-center font-black text-[9px] tracking-tighter"
-              style={{
-                width: '20px',
-                height: '20px',
-                background: '#141432',
-                color: '#fff',
-                borderRadius: '50%',
-                transform: 'rotate(-45deg)',
-              }}
-            >
-              ✛
-            </span>
-          </div>
+          <ProxPinThumb size={36} />
         </div>
       </div>
     </div>
