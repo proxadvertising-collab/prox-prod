@@ -28,8 +28,6 @@ export default function FeedPage() {
       },
       (err) => {
         setGeoError(err.message)
-        setUserLat(13.7563) // Default Bangkok fallback for testing if denied
-        setUserLng(100.5018)
       },
       { enableHighAccuracy: true }
     )
@@ -53,7 +51,6 @@ export default function FeedPage() {
 
     fetchDeals()
 
-    // Realtime channel subscription
     const channel = supabase
       .channel('public:deals')
       .on(
@@ -70,7 +67,6 @@ export default function FeedPage() {
     }
   }, [supabase])
 
-  // Filter within 5km (5000 meters) and sort nearest first if user location exists
   const processedDeals = deals
     .map((deal) => {
       const dist =
@@ -104,8 +100,14 @@ export default function FeedPage() {
       </header>
 
       {geoError && (
-        <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-800 text-xs p-3 rounded-xl">
-          Geolocation warning: {geoError}. Showing fallback view.
+        <div className="mb-4 bg-amber-50 border border-amber-200 text-amber-800 text-xs p-4 rounded-xl flex flex-col gap-2">
+          <span>Enable location to see deals near you</span>
+          <button
+            onClick={() => window.location.reload()}
+            className="self-start bg-amber-800 text-white font-bold text-[10px] px-3 py-1.5 rounded-lg"
+          >
+            Retry Location
+          </button>
         </div>
       )}
 

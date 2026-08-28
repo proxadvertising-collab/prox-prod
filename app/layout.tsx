@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   description: 'Find deals near you in meters, not miles. 1 live ad per business.',
   other: {
     'viewport': 'width=device-width, initial-scale=1, viewport-fit=cover',
-    'theme-color': '#000000',
+    'theme-color': '#00C950',
   },
 }
 
@@ -32,9 +32,10 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
       <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen bg-gray-100`}>
-        <div className="flex-grow max-w-md mx-auto w-full bg-white min-h-screen shadow-2xl flex flex-col">
+        <div className="flex-grow max-w-[430px] mx-auto w-full bg-white min-h-screen shadow-2xl flex flex-col">
           <Header />
           <div className="flex-grow">{children}</div>
           <Footer />
