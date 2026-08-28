@@ -1,11 +1,50 @@
 @import "tailwindcss";
 
-@layer base {
-  body {
-    background-color: #f3f4f6;
-    color: #111827;
-    font-family: var(--font-geist-sans), sans-serif;
-  }
+:root {
+  --void: #080813;
+  --indigo: #2D1B69;
+  --violet: #7C3AED;
+  --pearl: #F8F7F4;
+}
+
+html[data-theme='dark'] body {
+  background-color: var(--void);
+  background-image: radial-gradient(ellipse at 50% -20%, var(--indigo) 0%, var(--void) 70%);
+  color: var(--pearl);
+}
+
+html[data-theme='light'] body {
+  background-image: linear-gradient(120deg, #F8F7F4 0%, #EFE8FF 30%, #F8F7F4 60%, #E0F2FF 100%),
+    radial-gradient(ellipse at 50% -10%, rgba(124, 58, 237, 0.2) 0%, transparent 60%);
+  background-blend-mode: normal, normal;
+  color: #12203c;
+}
+
+body {
+  font-family: var(--font-geist-sans), sans-serif;
+  min-height: 100vh;
+}
+
+.glass-card-dark {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(24px);
+  border-radius: 20px;
+  box-shadow: 0 0 32px rgba(124, 58, 237, 0.15), 0 0 64px rgba(124, 58, 237, 0.08);
+}
+
+.glass-card-light {
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(124, 58, 237, 0.18);
+  backdrop-filter: blur(24px);
+  border-radius: 20px;
+  box-shadow: 0 0 24px rgba(124, 58, 237, 0.18), 0 0 48px rgba(124, 58, 237, 0.12), 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+
+.wordmark {
+  font-weight: 100;
+  letter-spacing: 0.02em;
+  text-shadow: 0 0 12px rgba(255, 255, 255, 0.6), 0 0 24px rgba(168, 85, 247, 0.4);
 }
 
 .no-scrollbar::-webkit-scrollbar {

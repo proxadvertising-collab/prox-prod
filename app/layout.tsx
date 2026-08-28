@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import Header from '@/components/Header'
 import Footer from '@/components/Footer'
+import { ThemeProvider } from '@/contexts/ThemeContext'
 import './globals.css'
 
 const geistSans = Geist({
@@ -18,8 +19,8 @@ export const metadata: Metadata = {
   title: 'Prox - Real-time local deals worldwide',
   description: 'Find deals near you in meters, not miles. 1 live ad per business.',
   other: {
-    'viewport': 'width=device-width, initial-scale=1, viewport-fit=cover',
-    'theme-color': '#00C950',
+    viewport: 'width=device-width, initial-scale=1, viewport-fit=cover',
+    'theme-color': '#080813',
   },
 }
 
@@ -29,17 +30,19 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" data-theme="dark">
       <head>
         <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
       </head>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen bg-gray-100`}>
-        <div className="flex-grow max-w-[430px] mx-auto w-full bg-white min-h-screen shadow-2xl flex flex-col">
-          <Header />
-          <div className="flex-grow">{children}</div>
-          <Footer />
-        </div>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased flex flex-col min-h-screen`}>
+        <ThemeProvider>
+          <div className="flex-grow max-w-[430px] mx-auto w-full min-h-screen flex flex-col">
+            <Header />
+            <div className="flex-grow">{children}</div>
+            <Footer />
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   )
