@@ -1,1 +1,12 @@
-@AGENTS.md
+# PROX - DO NOT BREAK RULES
+- Hyperlocal foot-traffic, NOT marketplace, NOT Yelp clone
+- No map view feed - feed is list sorted by distance (Haversine)
+- No mandatory expiry - expires_at is nullable, active till paused
+- No hosted reviews - social links in profiles table: instagram_url, facebook_url, tiktok_url, yelp_url, google_maps_url, website_url
+- DealCard: image top, title bold, business name gray, green distance pill, GO NOW! button -> opens https://www.google.com/maps/dir/?api=1&destination=LAT,LNG, click elsewhere opens drawer with socials
+- Post types: deal (with price) vs open (just photo + caption) - both drive traffic
+- Account page: 1 active deal at top + past deals list with Reactivate button that sets is_active=true
+- After post: share modal with prox.to/d/ID that business can share to IG/FB - viral loop
+- Storage bucket: deal-images public, region ap-southeast-1 Singapore
+- Stack: Next.js 16.3.3 app router, Tailwind, Supabase, Vercel prox-prod
+- Build must pass: npm run build
