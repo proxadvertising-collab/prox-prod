@@ -24,8 +24,20 @@ const CATEGORY_CHIPS = [
   { label: 'Open Now', emoji: '📍' },
 ]
 
-const MAX_KM = 40
+const KM_PER_MI = 1.60934
+const MIN_MI = 0.1
 const MAX_MI = 25
+const MIN_KM = MIN_MI * KM_PER_MI // ~0.16km / 160m
+const MAX_KM = MAX_MI * KM_PER_MI // ~40.23km
+const LOG_MIN_KM = Math.log(MIN_KM)
+const LOG_MAX_KM = Math.log(MAX_KM)
+
+function roundKm(km: number): number {
+  const clamped = Math.min(MAX_KM, Math.max(MIN_KM, km))
+  if (clamped < 1) return Math.round(clamped * 100) / 100 // ~10m steps
+  if (clamped < 10) return Math.round(clamped * 10) / 10 // 100m steps
+  return Math.round(clamped) // 1km steps
+}
 
 function formatSliderLabel(km: number, unit: 'km' | 'mi'): string {
   if (unit === 'mi') {
@@ -53,39 +65,46 @@ function DistanceSlider({
   const trackRef = useRef<HTMLDivElement | null>(null)
   const [dragging, setDragging] = useState(false)
 
-  const percent = Math.min(100, Math.max(0, (distanceKm / MAX_KM) * 100))
+  // Log-scale mapping so the useful hyperlocal range (100m-2km) isn't
+  // crushed into a tiny sliver of the track at the low end.
+  const kmToPercent = (km: number) => {
+    const clamped = Math.min(MAX_KM, Math.max(MIN_KM, km))
+    return ((Math.log(clamped) - LOG_MIN_KM) / (LOG_MAX_KM - LOG_MIN_KM)) * 100
+  }
+
+  const percentToKm = (percent: number) => {
+    const clampedPercent = Math.min(100, Math.max(0, percent))
+    const logKm = LOG_MIN_KM + (clampedPercent / 100) * (LOG_MAX_KM - LOG_MIN_KM)
+    return roundKm(Math.exp(logKm))
+  }
+
+  const percent = kmToPercent(distanceKm)
 
   const updateFromClientX = (clientX: number) => {
     const track = trackRef.current
     if (!track) return
     const rect = track.getBoundingClientRect()
-    const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width))
-    const km = Math.max(0.1, Math.round(ratio * MAX_KM * 10) / 10)
-    onChange(km)
+    const ratio = ((clientX - rect.left) / rect.width) * 100
+    onChange(percentToKm(ratio))
   }
 
-  useEffect(() => {
+  const handlePointerDown = (e: React.PointerEvent) => {
+    e.currentTarget.setPointerCapture(e.pointerId)
+    setDragging(true)
+    updateFromClientX(e.clientX)
+  }
+
+  const handlePointerMove = (e: React.PointerEvent) => {
     if (!dragging) return
+    updateFromClientX(e.clientX)
+  }
 
-    const handleMouseMove = (e: MouseEvent) => updateFromClientX(e.clientX)
-    const handleTouchMove = (e: TouchEvent) => {
-      if (e.touches[0]) updateFromClientX(e.touches[0].clientX)
+  const handlePointerUp = (e: React.PointerEvent) => {
+    if (e.currentTarget.hasPointerCapture(e.pointerId)) {
+      e.currentTarget.releasePointerCapture(e.pointerId)
     }
-    const stopDrag = () => setDragging(false)
-
-    window.addEventListener('mousemove', handleMouseMove)
-    window.addEventListener('touchmove', handleTouchMove)
-    window.addEventListener('mouseup', stopDrag)
-    window.addEventListener('touchend', stopDrag)
-
-    return () => {
-      window.removeEventListener('mousemove', handleMouseMove)
-      window.removeEventListener('touchmove', handleTouchMove)
-      window.removeEventListener('mouseup', stopDrag)
-      window.removeEventListener('touchend', stopDrag)
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dragging])
+    setDragging(false)
+  }
 
   return (
     <div className={`mx-4 mt-3 p-4 ${isDark ? 'glass-card-dark' : 'glass-card-light'}`}>
@@ -113,19 +132,17 @@ function DistanceSlider({
 
       <div
         ref={trackRef}
-        className="relative w-full rounded-full cursor-pointer mt-3"
+        className="relative w-full rounded-full mt-3"
         style={{
           height: '12px',
           background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)',
+          touchAction: 'none',
+          cursor: 'pointer',
         }}
-        onMouseDown={(e) => {
-          setDragging(true)
-          updateFromClientX(e.clientX)
-        }}
-        onTouchStart={(e) => {
-          setDragging(true)
-          if (e.touches[0]) updateFromClientX(e.touches[0].clientX)
-        }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+        onPointerCancel={handlePointerUp}
       >
         <div
           className="absolute top-0 left-0 h-full rounded-full"
@@ -143,14 +160,7 @@ function DistanceSlider({
             transform: 'translate(-50%, -50%)',
             width: '44px',
             height: '44px',
-          }}
-          onMouseDown={(e) => {
-            e.stopPropagation()
-            setDragging(true)
-          }}
-          onTouchStart={(e) => {
-            e.stopPropagation()
-            setDragging(true)
+            touchAction: 'none',
           }}
         >
           <ProxPinThumb size={36} />
@@ -178,7 +188,6 @@ export default function FeedPage() {
     try {
       const isUS = navigator.language === 'en-US'
       setUnit(isUS ? 'mi' : 'km')
-      setDistanceKm(isUS ? MAX_MI * 1.60934 : MAX_KM)
     } catch {}
   }, [])
 
