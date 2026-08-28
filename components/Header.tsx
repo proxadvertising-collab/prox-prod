@@ -20,19 +20,19 @@ export default function Header() {
 
   return (
     <header className="bg-white border-b border-gray-100 py-4 px-6 flex justify-between items-center shadow-sm">
-      <Link href="/" className="text-xl font-extrabold text-blue-600 tracking-tight">
+      <Link href="/" className="text-xl font-black text-black tracking-tight">
         Prox
       </Link>
       <div className="flex items-center gap-4">
-        <Link href="/business/post" className="text-sm font-semibold text-gray-700 hover:text-blue-600">
+        <Link href="/business/post" className="text-sm font-semibold text-gray-700 hover:text-black">
           Post Deal
         </Link>
         {user ? (
-          <Link href="/account" className="text-sm font-semibold bg-blue-50 text-blue-700 px-3 py-1.5 rounded-lg">
+          <Link href="/account" className="text-sm font-semibold bg-gray-100 text-black px-3 py-1.5 rounded-xl">
             Account
           </Link>
         ) : (
-          <Link href="/login" className="text-sm font-semibold bg-blue-600 text-white px-4 py-1.5 rounded-lg shadow-sm">
+          <Link href="/login" className="text-sm font-semibold bg-black text-white px-4 py-1.5 rounded-xl shadow-sm">
             Login
           </Link>
         )}
