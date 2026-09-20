@@ -1,24 +1,46 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState } from 'react'
 import { createBrowserClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
+
+const ATTRIBUTION_COOKIE = 'affiliate_attribution'
+
+/**
+ * Read the referral code from the attribution cookie — the durable channel.
+ * Prefers the validated `affiliate_attribution` JSON cookie; falls back to
+ * the legacy `prox_ref` cookie for links stamped before the migration.
+ * Never reads the URL param: it dies on auth redirects, the cookie doesn't.
+ */
+function readAttributionCode(): string {
+  const get = (name: string): string | null => {
+    const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'))
+    return match ? match[2] : null
+  }
+  const attributed = get(ATTRIBUTION_COOKIE)
+  if (attributed) {
+    try {
+      const parsed = JSON.parse(decodeURIComponent(attributed)) as { code?: string }
+      if (parsed.code) return parsed.code
+    } catch {
+      // Corrupt cookie: fall through to legacy.
+    }
+  }
+  return get('prox_ref') || ''
+}
 
 export default function SignupPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
-  const [refCode, setRefCode] = useState('')
+  // Read once at mount: the cookie is the durable channel (the URL param
+  // dies on auth redirects). Guarded for SSR — server renders blank.
+  const [refCode] = useState(() =>
+    typeof document === 'undefined' ? '' : readAttributionCode()
+  )
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const router = useRouter()
   const supabase = createBrowserClient()
-
-  useEffect(() => {
-    const match = document.cookie.match(new RegExp('(^| )prox_ref=([^;]+)'))
-    if (match) {
-      setRefCode(match[2])
-    }
-  }, [])
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault(); setLoading(true); setError('')
