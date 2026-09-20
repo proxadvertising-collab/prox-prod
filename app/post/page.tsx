@@ -22,6 +22,7 @@ export default function PostDealPage() {
   const [lng, setLng] = useState<number | null>(null)
   const [accuracy, setAccuracy] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
+  const [loadingAi, setLoadingAi] = useState(false)
   const [error, setError] = useState('')
   const [successDealId, setSuccessDealId] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
@@ -41,6 +42,29 @@ export default function PostDealPage() {
       if (prev.length >= 2) return prev
       return [...prev, cat]
     })
+  }
+
+  const handleAiGenerate = async () => {
+    if (!description.trim()) {
+      setError('Enter a description first, then generate a title.')
+      return
+    }
+    setLoadingAi(true)
+    setError('')
+    try {
+      const res = await fetch('/api/ai/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ input: description }),
+      })
+      const data = await res.json()
+      if (data.title) setTitle(data.title)
+      else setError(data.error || 'Failed to generate title')
+    } catch (err: any) {
+      setError(err.message || 'Error calling AI')
+    } finally {
+      setLoadingAi(false)
+    }
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -135,7 +159,17 @@ export default function PostDealPage() {
       {error && <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-xl">{error}</div>}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Title</label>
+          <div className="flex justify-between items-center mb-1">
+            <label className="block text-xs font-bold text-gray-700 uppercase">Title</label>
+            <button
+              type="button"
+              onClick={handleAiGenerate}
+              disabled={loadingAi}
+              className="text-[11px] font-bold bg-purple-100 text-purple-700 px-2.5 py-1 rounded-lg hover:bg-purple-200 disabled:opacity-50"
+            >
+              ✨ {loadingAi ? 'Generating...' : 'AI Generate'}
+            </button>
+          </div>
           <input type="text" required value={title} onChange={(e) => setTitle(e.target.value)} className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-black" placeholder="Offer Title" />
         </div>
         <div>

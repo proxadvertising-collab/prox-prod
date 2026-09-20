@@ -1,5 +1,12 @@
 import { NextResponse } from 'next/server'
 
+// Talk to an Ollama-compatible /api/generate endpoint.
+// Configure with env vars; defaults preserve local dev behavior.
+// In production, point OLLAMA_BASE_URL at the reachable Ollama host
+// (e.g. the Mac mini over Tailscale) — never hardcode a host here.
+const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL || 'http://localhost:11434'
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || 'llama3.2:latest'
+
 export async function POST(req: Request) {
   try {
     const { input } = await req.json()
@@ -9,11 +16,11 @@ export async function POST(req: Request) {
 
     const prompt = `6-8 word catchy deal title for: ${input}`
 
-    const response = await fetch('http://localhost:11434/api/generate', {
+    const response = await fetch(`${OLLAMA_BASE_URL}/api/generate`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'llama3.2:latest',
+        model: OLLAMA_MODEL,
         prompt,
         stream: false,
       }),
