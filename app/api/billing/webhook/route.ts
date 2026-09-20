@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import Stripe from 'stripe'
 import { createServiceClient } from '@/lib/supabase/service'
 import { getStripe } from '@/lib/billing/stripe'
+import { findAffiliateByCode, recordLedgerEntry } from '@/lib/affiliates/ledger'
 
 /**
  * POST /api/billing/webhook
@@ -58,7 +59,8 @@ export async function POST(req: Request) {
         if (subscriptionId) {
           const stripe = getStripe()
           const subscription = await stripe.subscriptions.retrieve(subscriptionId)
-          await upsertSubscription(supabase, subscription)
+          const businessId = await upsertSubscription(supabase, subscription)
+          await maybeCreditAffiliate(supabase, businessId, subscription.id)
         }
         break
       }
@@ -98,7 +100,7 @@ async function upsertSubscription(
   supabase: ReturnType<typeof createServiceClient>,
   subscription: Stripe.Subscription,
   statusOverride?: string
-) {
+): Promise<string> {
   const businessId =
     subscription.metadata?.business_id ||
     (await businessIdForCustomer(supabase, subscription.customer as string))
@@ -131,6 +133,48 @@ async function upsertSubscription(
     },
     { onConflict: 'stripe_subscription_id' }
   )
+
+  return businessId
+}
+
+/**
+ * Affiliate sale-credit hook. When a referred business's checkout completes,
+ * credit the referring affiliate. Gated by AFFILIATE_SALE_CREDIT_CENTS
+ * (default 0 = disabled) until the Tier 1 / Tier 2 commission numbers land.
+ * Idempotent: skips when a sale_credit already exists for this subscription.
+ */
+async function maybeCreditAffiliate(
+  supabase: ReturnType<typeof createServiceClient>,
+  businessId: string,
+  stripeSubscriptionId: string
+) {
+  const creditCents = parseInt(process.env.AFFILIATE_SALE_CREDIT_CENTS || '0', 10)
+  if (creditCents <= 0) return
+
+  const { data: business } = await supabase
+    .from('businesses')
+    .select('referred_by_code')
+    .eq('id', businessId)
+    .single()
+  const affiliate = await findAffiliateByCode(business?.referred_by_code)
+  if (!affiliate) return
+
+  const { data: existing } = await supabase
+    .from('affiliate_ledger')
+    .select('id')
+    .eq('stripe_subscription_id', stripeSubscriptionId)
+    .eq('kind', 'sale_credit')
+    .limit(1)
+  if (existing && existing.length > 0) return
+
+  await recordLedgerEntry({
+    affiliateId: affiliate.id,
+    businessId,
+    kind: 'sale_credit',
+    amountCents: creditCents,
+    stripeSubscriptionId,
+    notes: `Sale credit for subscription ${stripeSubscriptionId}`,
+  })
 }
 
 async function businessIdForCustomer(
