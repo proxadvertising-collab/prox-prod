@@ -36,12 +36,18 @@ export async function POST() {
     const stripe = getStripe()
     const admin = createServiceClient()
 
-    // Reuse the existing Stripe customer if we have one.
     const { data: existing } = await admin
       .from('subscriptions')
-      .select('stripe_customer_id')
+      .select('stripe_customer_id, status')
       .eq('business_id', business.id)
       .single()
+
+    if (existing?.status === 'active' || existing?.status === 'trialing') {
+      return NextResponse.json({
+        alreadySubscribed: true,
+        status: existing.status,
+      })
+    }
 
     let customerId = existing?.stripe_customer_id as string | undefined
     if (!customerId) {
@@ -78,8 +84,8 @@ export async function POST() {
       cancel_url: `${APP_URL}/account?billing=cancelled`,
     })
 
-    // Persist the customer link now so the webhook can upsert on completion.
-    await admin.from('subscriptions').upsert(
+    // One row per business. The webhook later UPDATEs this same row by business_id.
+    const { error: upsertError } = await admin.from('subscriptions').upsert(
       {
         business_id: business.id,
         stripe_customer_id: customerId,
@@ -88,6 +94,10 @@ export async function POST() {
       },
       { onConflict: 'business_id' }
     )
+    if (upsertError) {
+      console.error('subscriptions upsert failed', upsertError)
+      throw upsertError
+    }
 
     return NextResponse.json({ url: session.url })
   } catch (error: any) {

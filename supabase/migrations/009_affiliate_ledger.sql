@@ -44,10 +44,15 @@ CREATE TRIGGER ledger_append_only
   FOR EACH ROW EXECUTE FUNCTION prevent_ledger_mutation();
 
 -- Current balance per affiliate (cents). Positive = owed to affiliate.
-CREATE OR REPLACE VIEW affiliate_balances AS
+-- security_invoker so ledger RLS applies; default view grants would leak balances.
+CREATE OR REPLACE VIEW affiliate_balances
+WITH (security_invoker = true) AS
 SELECT affiliate_id, SUM(amount_cents)::BIGINT AS balance_cents
 FROM affiliate_ledger
 GROUP BY affiliate_id;
+
+REVOKE ALL ON affiliate_balances FROM PUBLIC, anon, authenticated;
+GRANT SELECT ON affiliate_balances TO service_role;
 
 ALTER TABLE affiliate_ledger ENABLE ROW LEVEL SECURITY;
 

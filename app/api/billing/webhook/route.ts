@@ -31,16 +31,16 @@ export async function POST(req: Request) {
     const stripe = getStripe()
     const body = await req.text()
     event = stripe.webhooks.constructEvent(body, signature, webhookSecret)
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json(
-      { error: `Signature verification failed: ${error.message}` },
+      { error: `Signature verification failed: ${errorMessage(error)}` },
       { status: 400 }
     )
   }
 
   const supabase = createServiceClient()
 
-  // Idempotency: ignore redelivered events.
+  // A row exists only after fulfillment succeeded, so retries still run the work.
   const { data: seen } = await supabase
     .from('stripe_events')
     .select('id')
@@ -49,13 +49,12 @@ export async function POST(req: Request) {
   if (seen) {
     return NextResponse.json({ received: true, deduped: true })
   }
-  await supabase.from('stripe_events').insert({ id: event.id, type: event.type })
 
   try {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session
-        const subscriptionId = session.subscription as string | null
+        const subscriptionId = stripeId(session.subscription)
         if (subscriptionId) {
           const stripe = getStripe()
           const subscription = await stripe.subscriptions.retrieve(subscriptionId)
@@ -76,7 +75,9 @@ export async function POST(req: Request) {
       }
       case 'invoice.payment_failed': {
         const invoice = event.data.object as Stripe.Invoice
-        const subscriptionId = (invoice as any).subscription as string | null
+        const subscriptionId = stripeId(
+          invoice.parent?.subscription_details?.subscription
+        )
         if (subscriptionId) {
           const stripe = getStripe()
           const subscription = await stripe.subscriptions.retrieve(subscriptionId)
@@ -85,12 +86,22 @@ export async function POST(req: Request) {
         break
       }
       default:
-        // Unhandled event types are logged (stripe_events) and ignored.
         break
     }
-  } catch (error: any) {
-    // Event is recorded; return 500 so Stripe retries the delivery.
-    return NextResponse.json({ error: error.message }, { status: 500 })
+  } catch (error: unknown) {
+    console.error('webhook fulfillment failed', error)
+    return NextResponse.json({ error: errorMessage(error) }, { status: 500 })
+  }
+
+  const { error: eventInsertError } = await supabase
+    .from('stripe_events')
+    .insert({ id: event.id, type: event.type })
+  if (eventInsertError) {
+    if (eventInsertError.code === '23505') {
+      return NextResponse.json({ received: true, deduped: true })
+    }
+    console.error('stripe_events insert failed', eventInsertError)
+    return NextResponse.json({ error: eventInsertError.message }, { status: 500 })
   }
 
   return NextResponse.json({ received: true })
@@ -101,38 +112,41 @@ async function upsertSubscription(
   subscription: Stripe.Subscription,
   statusOverride?: string
 ): Promise<string> {
-  const businessId =
-    subscription.metadata?.business_id ||
-    (await businessIdForCustomer(supabase, subscription.customer as string))
+  const customerId = stripeId(subscription.customer)
+  if (!customerId) {
+    throw new Error(`Subscription ${subscription.id} has no customer id`)
+  }
+  const businessId = await businessIdForCustomer(supabase, customerId)
 
   if (!businessId) {
     throw new Error(
-      `Cannot map subscription ${subscription.id} to a business (no metadata.business_id)`
+      `Cannot map subscription ${subscription.id} to a business (no row for customer ${customerId})`
     )
   }
 
   const item = subscription.items.data[0]
-  await supabase.from('subscriptions').upsert(
-    {
-      business_id: businessId,
-      stripe_customer_id: subscription.customer as string,
+  const { data, error } = await supabase
+    .from('subscriptions')
+    .update({
       stripe_subscription_id: subscription.id,
       status: statusOverride || subscription.status,
       price_id: item?.price.id || null,
-      current_period_start: (subscription as any).current_period_start
-        ? new Date((subscription as any).current_period_start * 1000).toISOString()
-        : null,
-      current_period_end: (subscription as any).current_period_end
-        ? new Date((subscription as any).current_period_end * 1000).toISOString()
-        : null,
-      trial_end: (subscription as any).trial_end
-        ? new Date((subscription as any).trial_end * 1000).toISOString()
-        : null,
+      current_period_start: unixToIso(item?.current_period_start),
+      current_period_end: unixToIso(item?.current_period_end),
+      trial_end: unixToIso(subscription.trial_end),
       cancel_at_period_end: subscription.cancel_at_period_end || false,
       updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'stripe_subscription_id' }
-  )
+    })
+    .eq('business_id', businessId)
+    .select('id')
+
+  if (error) {
+    console.error('subscriptions update failed', error)
+    throw error
+  }
+  if (!data?.length) {
+    throw new Error(`No subscription row to update for business ${businessId}`)
+  }
 
   return businessId
 }
@@ -189,4 +203,19 @@ async function businessIdForCustomer(
     .limit(1)
     .single()
   return (data?.business_id as string) || null
+}
+
+function stripeId(
+  value: string | { id: string } | null | undefined
+): string | null {
+  if (!value) return null
+  return typeof value === 'string' ? value : value.id
+}
+
+function unixToIso(seconds: number | null | undefined): string | null {
+  return seconds == null ? null : new Date(seconds * 1000).toISOString()
+}
+
+function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : 'Webhook failed'
 }
