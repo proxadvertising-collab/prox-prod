@@ -59,7 +59,9 @@ export async function POST(req: Request) {
           const stripe = getStripe()
           const subscription = await stripe.subscriptions.retrieve(subscriptionId)
           const businessId = await upsertSubscription(supabase, subscription)
-          await maybeCreditAffiliate(supabase, businessId, subscription.id)
+          if (businessId) {
+            await maybeCreditAffiliate(supabase, businessId, subscription.id)
+          }
         }
         break
       }
@@ -111,21 +113,47 @@ async function upsertSubscription(
   supabase: ReturnType<typeof createServiceClient>,
   subscription: Stripe.Subscription,
   statusOverride?: string
-): Promise<string> {
+): Promise<string | null> {
   const customerId = stripeId(subscription.customer)
   if (!customerId) {
     throw new Error(`Subscription ${subscription.id} has no customer id`)
   }
-  const businessId = await businessIdForCustomer(supabase, customerId)
 
-  if (!businessId) {
+  const { data: row, error: lookupError } = await supabase
+    .from('subscriptions')
+    .select('business_id, stripe_customer_id, stripe_subscription_id')
+    .eq('stripe_customer_id', customerId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+
+  if (lookupError) {
+    throw lookupError
+  }
+  if (!row?.business_id) {
     throw new Error(
       `Cannot map subscription ${subscription.id} to a business (no row for customer ${customerId})`
     )
   }
 
+  const storedCustomerId = row.stripe_customer_id as string
+  const storedSubId = (row.stripe_subscription_id as string | null) || null
+  const firstTimeAttach = !storedSubId
+  const idsMatch = storedCustomerId === customerId && storedSubId === subscription.id
+
+  if (!firstTimeAttach && !idsMatch) {
+    console.error('webhook refusing mismatched stripe ids', {
+      businessId: row.business_id,
+      storedCustomerId,
+      storedSubId,
+      incomingCustomerId: customerId,
+      incomingSubId: subscription.id,
+    })
+    return null
+  }
+
   const item = subscription.items.data[0]
-  const { data, error } = await supabase
+  let update = supabase
     .from('subscriptions')
     .update({
       stripe_subscription_id: subscription.id,
@@ -137,18 +165,30 @@ async function upsertSubscription(
       cancel_at_period_end: subscription.cancel_at_period_end || false,
       updated_at: new Date().toISOString(),
     })
-    .eq('business_id', businessId)
-    .select('id')
+    .eq('business_id', row.business_id)
+    .eq('stripe_customer_id', customerId)
+
+  update = firstTimeAttach
+    ? update.is('stripe_subscription_id', null)
+    : update.eq('stripe_subscription_id', subscription.id)
+
+  const { data, error } = await update.select('id')
 
   if (error) {
     console.error('subscriptions update failed', error)
     throw error
   }
   if (!data?.length) {
-    throw new Error(`No subscription row to update for business ${businessId}`)
+    console.error('webhook skipped: stored stripe ids did not match incoming event', {
+      businessId: row.business_id,
+      storedCustomerId,
+      storedSubId,
+      incomingSubId: subscription.id,
+    })
+    return null
   }
 
-  return businessId
+  return row.business_id as string
 }
 
 /**
@@ -189,20 +229,6 @@ async function maybeCreditAffiliate(
     stripeSubscriptionId,
     notes: `Sale credit for subscription ${stripeSubscriptionId}`,
   })
-}
-
-async function businessIdForCustomer(
-  supabase: ReturnType<typeof createServiceClient>,
-  customerId: string
-): Promise<string | null> {
-  const { data } = await supabase
-    .from('subscriptions')
-    .select('business_id')
-    .eq('stripe_customer_id', customerId)
-    .order('created_at', { ascending: false })
-    .limit(1)
-    .single()
-  return (data?.business_id as string) || null
 }
 
 function stripeId(
