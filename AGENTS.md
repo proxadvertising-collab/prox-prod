@@ -25,3 +25,14 @@ This block is written and re-added by `next dev` — verify at `node_modules/nex
 - Routing, scoring, risk-checking, and "which approach" decisions go to Jev via the API, not frontier reasoning. Jev proposes, code disposes.
 - Endpoint: POST https://api.typesafe.ai/v1/systemone. Key comes from the environment. Never hardcode it.
 - Dev calls: is this diff risky, which implementation approach, does this need human review, is this tool call necessary.
+
+## Prox launch - anti-loop rules (Mr.Silver / captain standing order)
+
+These override the "/plan first" habit when it causes retries. Prefer implement-or-blocker over plan-mode loops.
+
+1. **One try then ask.** First auth/env/tool failure -> STOP. Name the exact secret or decision. No second script. No "clearer purpose" retry after a Jev/PreToolUse deny.
+2. **One path only.** Default: this repo root on the branch the human named (usually `mordecai/prox-launch-fixes`). Do not open `C:\Users\oldpi\prox` or any `.grok\worktrees\*` unless the human says so.
+3. **No plan-mode loops.** Do not rewrite the plan, do not spam `exit_plan_mode`. Implement the asked change or return a 5-line blocker.
+4. **No live side effects** unless the human writes `apply` / `deploy` / `listen` / `dev`. No `stripe listen`, no extra `next dev`, no seed SQL, no Vercel env writes.
+5. **Budget:** max ~8 tool calls per turn. If you need more: 5-line blocker and wait.
+6. **Secrets:** Never treat `SUPABASE_SERVICE_ROLE_KEY` as valid until the JWT `role` is `service_role` (not `anon`). Missing Stripe keys -> stop and ask; do not invent workarounds.
