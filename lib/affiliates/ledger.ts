@@ -56,7 +56,22 @@ export async function recordLedgerEntry(entry: LedgerEntry): Promise<LedgerRow> 
     .select('*')
     .single()
 
-  if (error) throw new Error(`Ledger write failed: ${error.message}`)
+  if (error) {
+    if (
+      error.code === '23505' &&
+      entry.kind === 'sale_credit' &&
+      entry.stripeSubscriptionId
+    ) {
+      const { data: existing } = await supabase
+        .from('affiliate_ledger')
+        .select('*')
+        .eq('kind', 'sale_credit')
+        .eq('stripe_subscription_id', entry.stripeSubscriptionId)
+        .maybeSingle()
+      if (existing) return existing as LedgerRow
+    }
+    throw new Error(`Ledger write failed: ${error.message}`)
+  }
   return data as LedgerRow
 }
 
