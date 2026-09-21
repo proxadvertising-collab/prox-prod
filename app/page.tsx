@@ -108,8 +108,9 @@ function DistanceSlider({ distanceKm, onChange, unit, onToggleUnit, isDark }: {
             const i = Number(e.target.value)
             onChange(STEPS_KM[i])
           }}
-          className="absolute w-full cursor-pointer" style={{ opacity: 0.01, height: 44, zIndex: 10 }}
+          className="absolute w-full cursor-pointer"
           style={{
+            opacity: 0.01,
             height: '44px',
             margin: 0,
             zIndex: 10,
