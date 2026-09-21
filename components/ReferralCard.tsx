@@ -10,7 +10,9 @@ interface ReferralCardProps {
 
 export default function ReferralCard({ referralCode, credits, referredCount }: ReferralCardProps) {
   const [copied, setCopied] = useState(false)
-  const link = typeof window !== 'undefined' ? `${window.location.origin}/login?ref=${referralCode}` : `https://prox.app/login?ref=${referralCode}`
+  const origin = typeof window !== 'undefined' ? window.location.origin : 'https://prox.app'
+  const link = `${origin}/signup?ref=${referralCode}`
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(link)}`
 
   const handleCopy = () => {
     navigator.clipboard.writeText(link)
@@ -21,8 +23,18 @@ export default function ReferralCard({ referralCode, credits, referredCount }: R
   return (
     <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 space-y-4">
       <div>
-        <h3 className="text-lg font-black text-gray-900 mb-1">Affiliate & Referrals</h3>
-        <p className="text-xs text-gray-500">Invite business owners and get free post credits.</p>
+        <h3 className="text-lg font-black text-gray-900 mb-1">Your invite</h3>
+        <p className="text-xs text-gray-500">Share this with a business. They sign up with your code.</p>
+      </div>
+
+      <div className="text-center space-y-1">
+        <p className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Your code</p>
+        <p className="text-3xl font-black tracking-[0.2em] text-gray-900">{referralCode}</p>
+      </div>
+
+      <div className="flex flex-col items-center gap-2">
+        <img src={qrSrc} alt="Referral QR" width={200} height={200} className="rounded-xl border border-gray-100" />
+        <p className="text-xs text-gray-500 text-center">Business scans this to sign up with your code.</p>
       </div>
 
       <div className="bg-gray-50 rounded-xl p-4 border border-gray-100 space-y-2">
@@ -46,6 +58,7 @@ export default function ReferralCard({ referralCode, credits, referredCount }: R
             className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-mono text-gray-600"
           />
           <button
+            type="button"
             onClick={handleCopy}
             className="bg-black text-white font-bold px-4 py-2 rounded-xl text-xs hover:bg-gray-800 transition-colors shrink-0"
           >

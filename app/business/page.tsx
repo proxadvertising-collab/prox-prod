@@ -2,14 +2,13 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/client'
 import { useTheme } from '@/contexts/ThemeContext'
+import BusinessHome from '@/components/BusinessHome'
 
 export default function BusinessPage() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
-  const router = useRouter()
   const supabase = useMemo(() => createBrowserClient(), [])
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null)
   const text = isDark ? '#F7F3FB' : '#1A1523'
@@ -21,10 +20,11 @@ export default function BusinessPage() {
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
-      if (data.user) router.replace('/post')
-      else setLoggedIn(false)
+      setLoggedIn(!!data.user)
     })
-  }, [router, supabase])
+  }, [supabase])
+
+  if (loggedIn) return <BusinessHome />
 
   return (
     <main className="px-4 py-8">

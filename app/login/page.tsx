@@ -61,7 +61,7 @@ export default function LoginPage() {
           Affiliate
         </Link>
         <Link
-          href={loggedIn ? '/post' : '/signup?next=/post'}
+          href={loggedIn ? '/business' : '/signup?next=/business'}
           className="h-11 rounded-xl text-sm font-semibold flex items-center justify-center"
           style={sideBtn}
         >
