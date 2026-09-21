@@ -27,6 +27,39 @@ const STEPS_MI = [0.1, 0.15, 0.2, 0.25, 0.5, 1, 2, 3, 4, 5, 10, 15, 20, 25] as c
 const HUA_HIN_LAT = 12.5684
 const HUA_HIN_LNG = 99.9577
 
+const DISTANCE_LINES = [
+  "Let's go find some treasure!",
+  'Proximity ALERT!',
+  "Let's get some steps in",
+  "Where we going, boss?",
+  'Hunt mode: ON',
+  "What's cooking near you?",
+  'GO NOW energy',
+  'Pocket radar locked',
+  'Walkable wins only',
+  'Round the corner?',
+  'Feed the map gremlin',
+  "Local or it didn't happen",
+  'Boss wants options',
+  'Steps → snacks',
+  'Tiny quest radius',
+  "Who's open near us?",
+  'Pull the pin closer',
+  'Neighborhood roulette',
+  'Fresh air + deals',
+  'Make the phone useful',
+  'Check the block',
+  'Treasure within walking',
+  'Dial in the hunt',
+  'Prox is curious',
+  'Ready when you are',
+  'Keep it close',
+  'Stretch the legs',
+  'Find the good stuff',
+  'One mile miracles',
+  "Let's roll, captain",
+] as const
+
 function DistanceSlider({
   miles,
   onChange,
@@ -39,6 +72,9 @@ function DistanceSlider({
   const idx = STEPS_MI.findIndex((m) => Math.abs(m - miles) < 0.001)
   const currentIndex = idx === -1 ? 5 : idx
   const percent = (currentIndex / (STEPS_MI.length - 1)) * 100
+  const [line] = useState(
+    () => DISTANCE_LINES[Math.floor(Math.random() * DISTANCE_LINES.length)]
+  )
   const surface = isDark ? '#12121A' : '#FFFFFF'
   const border = isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(26,21,35,0.08)'
   const text = isDark ? '#F7F3FB' : '#1A1523'
@@ -48,9 +84,9 @@ function DistanceSlider({
       className="mx-4 mt-2 px-4 pt-4 pb-3 rounded-2xl"
       style={{ touchAction: 'none', userSelect: 'none', background: surface, border }}
     >
-      <div className="flex justify-between items-baseline mb-3">
-        <span className="text-[13px] font-semibold" style={{ color: text }}>
-          How far should Prox look?
+      <div className="flex justify-between items-baseline gap-3 mb-3">
+        <span className="text-[13px] font-semibold min-w-0" style={{ color: text }}>
+          {line}
         </span>
         <span className="text-[15px] font-bold tabular-nums" style={{ color: '#5D20B5' }}>
           {STEPS_MI[currentIndex]} mi
