@@ -3,6 +3,7 @@
 import React from 'react'
 import { useRouter } from 'next/navigation'
 import { calculateDistance } from '@/lib/distance'
+import { openGoNow } from '@/lib/maps'
 import { useTheme } from '@/contexts/ThemeContext'
 import ProfileSocials from '@/components/ProfileSocials'
 
@@ -53,8 +54,7 @@ export default function DealCard({ deal, userLat, userLng }: DealCardProps) {
 
   const handleGoNow = (e: React.MouseEvent) => {
     e.stopPropagation()
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${deal.lat},${deal.lng}&travelmode=walking`
-    window.open(url, '_blank')
+    openGoNow(Number(deal.lat), Number(deal.lng), distance)
   }
 
   const price = deal.price_display || deal.original_price || null

@@ -4,6 +4,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/client'
 import { calculateDistance, formatDistance } from '@/lib/distance'
+import { openGoNow } from '@/lib/maps'
 import { useTheme } from '@/contexts/ThemeContext'
 import type { Deal, Profile, Business } from '@/types/database'
 
@@ -71,8 +72,11 @@ export default function DealDetailPage() {
 
   const handleGoNow = () => {
     if (!deal) return
-    const url = `https://www.google.com/maps/dir/?api=1&destination=${deal.lat},${deal.lng}&travelmode=walking`
-    window.open(url, '_blank')
+    const meters =
+      userLat !== null && userLng !== null
+        ? calculateDistance(userLat, userLng, deal.lat, deal.lng)
+        : null
+    openGoNow(deal.lat, deal.lng, meters)
   }
 
   const handleShare = () => {
