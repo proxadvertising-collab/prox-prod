@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { createBrowserClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import LocationButton from '@/components/LocationButton'
@@ -27,7 +27,7 @@ export default function PostDealPage() {
   const [copied, setCopied] = useState(false)
 
   const router = useRouter()
-  const supabase = createBrowserClient()
+  const supabase = useMemo(() => createBrowserClient(), [])
 
   const handleLocation = (latitude: number, longitude: number, acc: number) => {
     setLat(latitude)

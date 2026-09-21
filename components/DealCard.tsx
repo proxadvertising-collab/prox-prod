@@ -56,12 +56,12 @@ export default function DealCard({ deal, userLat, userLng }: DealCardProps) {
           src={deal.image_url}
           alt={deal.title}
           className="w-full object-cover"
-          style={{ height: 180 }}
+          style={{ height: 224 }}
         />
       ) : (
         <div
           className="w-full flex items-center justify-center"
-          style={{ height: 180, background: isDark ? '#1A1523' : '#EDE7F6' }}
+          style={{ height: 224, background: isDark ? '#1A1523' : '#EDE7F6' }}
         >
           <img src="/prox-radar-o.svg" alt="" width={56} height={56} />
         </div>
@@ -93,7 +93,7 @@ export default function DealCard({ deal, userLat, userLng }: DealCardProps) {
         </p>
 
         {price && (
-          <p className="text-[15px] font-bold" style={{ color: '#F25A17' }}>
+          <p className="text-2xl font-black" style={{ color: '#F25A17' }}>
             {price}
             {deal.original_price && deal.price_display && deal.original_price !== deal.price_display ? (
               <span className="ml-2 text-[12px] font-medium line-through" style={{ color: muted }}>
@@ -111,28 +111,26 @@ export default function DealCard({ deal, userLat, userLng }: DealCardProps) {
           />
         </div>
 
-        <div className="mt-1 flex items-center justify-between gap-3">
-          <span
-            className="text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full"
-            style={{
-              background:
-                deal.post_type === 'open' ? 'rgba(93,32,181,0.16)' : 'rgba(242,90,23,0.14)',
-              color: deal.post_type === 'open' ? (isDark ? '#D8B4FE' : '#5D20B5') : '#F25A17',
-            }}
-          >
-            {deal.post_type === 'open' ? "We're Open" : 'Deal'}
-          </span>
+        <span
+          className="self-start text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full"
+          style={{
+            background:
+              deal.post_type === 'open' ? 'rgba(93,32,181,0.16)' : 'rgba(242,90,23,0.14)',
+            color: deal.post_type === 'open' ? (isDark ? '#D8B4FE' : '#5D20B5') : '#F25A17',
+          }}
+        >
+          {deal.post_type === 'open' ? "We're Open" : 'Deal'}
+        </span>
 
-          <button
-            type="button"
-            onClick={handleGoNow}
-            aria-label="GO NOW walking directions"
-            className="shrink-0"
-            style={{ width: 64, height: 64, padding: 0, background: 'transparent', border: 0 }}
-          >
-            <img src="/prox-go-now-button.svg" alt="GO NOW" width={64} height={64} />
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={handleGoNow}
+          aria-label="GO NOW walking directions"
+          className="w-full flex items-center justify-center"
+          style={{ minHeight: 64, padding: 0, background: 'transparent', border: 0 }}
+        >
+          <img src="/prox-go-now-button.svg" alt="GO NOW" width={64} height={64} />
+        </button>
       </div>
     </article>
   )

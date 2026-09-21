@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/client'
 import { calculateDistance, formatDistance } from '@/lib/distance'
@@ -13,7 +13,7 @@ export default function DealDetailPage() {
   const params = useParams()
   const router = useRouter()
   const id = params.id as string
-  const supabase = createBrowserClient()
+  const supabase = useMemo(() => createBrowserClient(), [])
   const { theme } = useTheme()
   const isDark = theme === 'dark'
   const textColor = isDark ? '#F8F7F4' : '#12203c'

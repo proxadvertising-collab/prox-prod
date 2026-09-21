@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { createBrowserClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import ReferralCard from '@/components/ReferralCard'
@@ -23,7 +23,7 @@ export default function AccountPage() {
   const [saveStatus, setSaveStatus] = useState('')
 
   const router = useRouter()
-  const supabase = createBrowserClient()
+  const supabase = useMemo(() => createBrowserClient(), [])
 
   useEffect(() => {
     async function loadData() {
