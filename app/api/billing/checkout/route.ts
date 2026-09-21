@@ -38,15 +38,31 @@ export async function POST() {
 
     const { data: existing } = await admin
       .from('subscriptions')
-      .select('stripe_customer_id, status')
+      .select('stripe_customer_id, status, current_period_end')
       .eq('business_id', business.id)
       .single()
 
-    if (existing?.status === 'active' || existing?.status === 'trialing') {
-      return NextResponse.json({
-        alreadySubscribed: true,
-        status: existing.status,
-      })
+    const liveStatus =
+      existing?.status === 'active' ||
+      existing?.status === 'trialing' ||
+      existing?.status === 'past_due' ||
+      existing?.status === 'unpaid'
+    const paidThroughMs = existing?.current_period_end
+      ? Date.parse(existing.current_period_end)
+      : NaN
+    const paidThroughInFuture = Number.isFinite(paidThroughMs) && paidThroughMs > Date.now()
+
+    if (liveStatus || paidThroughInFuture) {
+      return NextResponse.json(
+        {
+          error:
+            'This business already has a live subscription. A new Checkout Session was not created.',
+          code: 'already_subscribed',
+          status: existing?.status ?? null,
+          paid_through: existing?.current_period_end ?? null,
+        },
+        { status: 409 }
+      )
     }
 
     let customerId = existing?.stripe_customer_id as string | undefined
