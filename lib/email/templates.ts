@@ -1,5 +1,5 @@
 export function expiringSoonEmail(deal: any, businessEmail: string) {
-  const postUrl = 'https://prox.app/business/post'
+  const postUrl = 'https://prox.app/post'
   return {
     to: businessEmail,
     subject: 'Your Prox deal expires in 2h - renew?',
@@ -15,7 +15,7 @@ export function expiringSoonEmail(deal: any, businessEmail: string) {
 }
 
 export function noLiveAdEmail(businessEmail: string) {
-  const postUrl = 'https://prox.app/business/post'
+  const postUrl = 'https://prox.app/post'
   return {
     to: businessEmail,
     subject: 'You have no live deal on Prox - customers nearby are looking',

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { createServerClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { resend } from '@/lib/email/resend'
 import { expiringSoonEmail } from '@/lib/email/templates'
 
@@ -9,7 +9,9 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const supabase = await createServerClient()
+  // Cron context has no user session: use the service-role client.
+  // The anon-key client cannot call auth.admin.* and is RLS-limited.
+  const supabase = createServiceClient()
   const now = new Date()
   const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000).toISOString()
   const nowIso = now.toISOString()

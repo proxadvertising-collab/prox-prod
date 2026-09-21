@@ -12,7 +12,7 @@ export default function BottomNav() {
 
   const items = [
     { href: '/', icon: '🏠', label: 'Feed', match: (p: string) => p === '/' },
-    { href: '/post', icon: '➕', label: 'Post', match: (p: string) => p === '/post' || p === '/business/post' },
+    { href: '/post', icon: '➕', label: 'Post', match: (p: string) => p === '/post' },
     { href: '/account', icon: '👤', label: 'Account', match: (p: string) => p === '/account' },
   ]
 
