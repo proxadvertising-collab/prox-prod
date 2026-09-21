@@ -5,6 +5,7 @@ import { createBrowserClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import ReferralCard from '@/components/ReferralCard'
 import BottomNav from '@/components/BottomNav'
+import { clearDoor } from '@/lib/door'
 
 export default function AccountPage() {
   const [user, setUser] = useState<any>(null)
@@ -76,6 +77,17 @@ export default function AccountPage() {
           referredCount={referredCount}
         />
       )}
+
+      <button
+        type="button"
+        onClick={() => {
+          clearDoor()
+          router.push('/welcome')
+        }}
+        className="text-xs font-semibold text-gray-400 text-center"
+      >
+        Change role
+      </button>
 
       <BottomNav />
     </main>

@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/client'
 import BottomNav from '@/components/BottomNav'
+import { clearDoor } from '@/lib/door'
 
 export default function BusinessHome() {
   const [user, setUser] = useState<any>(null)
@@ -177,6 +178,17 @@ export default function BusinessHome() {
           </div>
         )}
       </div>
+
+      <button
+        type="button"
+        onClick={() => {
+          clearDoor()
+          router.push('/welcome')
+        }}
+        className="text-xs font-semibold text-gray-400 text-center"
+      >
+        Change role
+      </button>
 
       <BottomNav />
     </main>

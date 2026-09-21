@@ -5,6 +5,8 @@ import { createBrowserClient } from '@/lib/supabase/client'
 import { calculateDistance } from '@/lib/distance'
 import DealCard from '@/components/DealCard'
 import { useTheme } from '@/contexts/ThemeContext'
+import { useRouter } from 'next/navigation'
+import { getDoor } from '@/lib/door'
 
 const CATEGORY_CHIPS = [
   { key: 'All', label: 'All' },
@@ -156,6 +158,8 @@ function DistanceSlider({
 export default function FeedPage() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
+  const router = useRouter()
+  const [doorReady, setDoorReady] = useState(false)
   const [userLat, setUserLat] = useState<number>(HUA_HIN_LAT)
   const [userLng, setUserLng] = useState<number>(HUA_HIN_LNG)
   const [geoError, setGeoError] = useState<string | null>(null)
@@ -205,10 +209,31 @@ export default function FeedPage() {
   }, [supabase])
 
   useEffect(() => {
-    requestGeo()
-  }, [requestGeo])
+    const door = getDoor()
+    if (!door) {
+      router.replace('/welcome')
+      return
+    }
+    if (door === 'shopper') {
+      setDoorReady(true)
+      return
+    }
+    supabase.auth.getUser().then(({ data }) => {
+      if (door === 'business') {
+        router.replace(data.user ? '/business' : '/login?next=/business')
+      } else {
+        router.replace(data.user ? '/account' : '/login?next=/account')
+      }
+    })
+  }, [router, supabase])
 
   useEffect(() => {
+    if (!doorReady) return
+    requestGeo()
+  }, [doorReady, requestGeo])
+
+  useEffect(() => {
+    if (!doorReady) return
     fetchDeals()
     const channel = supabase
       .channel('public:deals')
@@ -217,7 +242,7 @@ export default function FeedPage() {
     return () => {
       supabase.removeChannel(channel)
     }
-  }, [supabase, fetchDeals])
+  }, [supabase, fetchDeals, doorReady])
 
   const onRefresh = useCallback(async () => {
     if (refreshing) return
@@ -274,6 +299,8 @@ export default function FeedPage() {
   const textColor = isDark ? '#F7F3FB' : '#1A1523'
   const surface = isDark ? '#12121A' : '#FFFFFF'
   const border = isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(26,21,35,0.08)'
+
+  if (!doorReady) return null
 
   return (
     <main className="min-h-screen pb-20 flex flex-col">

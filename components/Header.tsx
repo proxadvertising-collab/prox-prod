@@ -3,13 +3,17 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { createBrowserClient } from '@/lib/supabase/client'
 import Link from 'next/link'
+import { usePathname, useRouter } from 'next/navigation'
 import { useTheme } from '@/contexts/ThemeContext'
+import { clearDoor } from '@/lib/door'
 
 export default function Header() {
   const [user, setUser] = useState<any>(null)
   const supabase = useMemo(() => createBrowserClient(), [])
   const { theme, toggleTheme } = useTheme()
   const isDark = theme === 'dark'
+  const pathname = usePathname()
+  const router = useRouter()
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUser(data.user))
@@ -44,6 +48,19 @@ export default function Header() {
       </Link>
 
       <div className="flex items-center gap-2">
+        {pathname !== '/welcome' ? (
+          <button
+            type="button"
+            onClick={() => {
+              clearDoor()
+              router.push('/welcome')
+            }}
+            className="text-[10px] font-semibold px-2 py-1.5"
+            style={{ color: isDark ? 'rgba(247,243,251,0.55)' : 'rgba(26,21,35,0.5)' }}
+          >
+            Change role
+          </button>
+        ) : null}
         {user ? (
           <Link
             href="/account"
