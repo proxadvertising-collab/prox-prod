@@ -41,11 +41,16 @@ CREATE TRIGGER enforce_single_live_ad
 ALTER TABLE businesses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE deals ENABLE ROW LEVEL SECURITY;
 
+-- Guards make this file safe to replay standalone; later migrations
+-- (003_rls.sql) intentionally replace these policies with tighter ones.
+DROP POLICY IF EXISTS "Allow public read access on businesses" ON businesses;
 CREATE POLICY "Allow public read access on businesses" ON businesses
   FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Allow public read access on live deals" ON deals;
 CREATE POLICY "Allow public read access on live deals" ON deals
   FOR SELECT USING (expires_at > now());
 
+DROP POLICY IF EXISTS "Allow business inserts" ON deals;
 CREATE POLICY "Allow business inserts" ON deals
   FOR INSERT WITH CHECK (true);
