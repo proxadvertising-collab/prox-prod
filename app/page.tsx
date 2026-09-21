@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { createBrowserClient } from '@/lib/supabase/client'
 import { calculateDistance } from '@/lib/distance'
 import DealCard from '@/components/DealCard'
@@ -163,9 +163,13 @@ export default function FeedPage() {
   const [loading, setLoading] = useState(true)
   const [activeChip, setActiveChip] = useState('All')
   const [miles, setMiles] = useState(1)
+  const [refreshing, setRefreshing] = useState(false)
+  const [pullPx, setPullPx] = useState(0)
+  const pullStartY = useRef(0)
+  const pulling = useRef(false)
   const supabase = useMemo(() => createBrowserClient(), [])
 
-  useEffect(() => {
+  const requestGeo = useCallback(() => {
     if (!navigator.geolocation) {
       setGeoError('Geolocation not supported — showing Hua Hin')
       return
@@ -177,40 +181,78 @@ export default function FeedPage() {
         setGeoError(null)
       },
       (err) => setGeoError(err.message),
-      { enableHighAccuracy: true, timeout: 8000, maximumAge: 30000 }
+      { enableHighAccuracy: true, timeout: 8000, maximumAge: 0 }
     )
   }, [])
 
-  useEffect(() => {
-    let cancelled = false
-    async function fetchDeals() {
-      const now = new Date().toISOString()
-      try {
-        const { data, error } = await supabase
-          .from('deals')
-          .select('*, businesses(name, currency)')
-          .eq('is_active', true)
-          .or(`expires_at.is.null,expires_at.gt.${now}`)
-          .order('created_at', { ascending: false })
-        if (cancelled) return
-        if (!error && data) setDeals(data)
-        else setDeals([])
-      } catch {
-        if (!cancelled) setDeals([])
-      } finally {
-        if (!cancelled) setLoading(false)
-      }
+  const fetchDeals = useCallback(async () => {
+    const now = new Date().toISOString()
+    try {
+      const { data, error } = await supabase
+        .from('deals')
+        .select('*, businesses(name, currency)')
+        .eq('is_active', true)
+        .or(`expires_at.is.null,expires_at.gt.${now}`)
+        .order('created_at', { ascending: false })
+      if (!error && data) setDeals(data)
+      else setDeals([])
+    } catch {
+      setDeals([])
+    } finally {
+      setLoading(false)
+      setRefreshing(false)
     }
+  }, [supabase])
+
+  useEffect(() => {
+    requestGeo()
+  }, [requestGeo])
+
+  useEffect(() => {
     fetchDeals()
     const channel = supabase
       .channel('public:deals')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'deals' }, () => fetchDeals())
       .subscribe()
     return () => {
-      cancelled = true
       supabase.removeChannel(channel)
     }
-  }, [supabase])
+  }, [supabase, fetchDeals])
+
+  const onRefresh = useCallback(async () => {
+    if (refreshing) return
+    setRefreshing(true)
+    requestGeo()
+    await fetchDeals()
+  }, [refreshing, requestGeo, fetchDeals])
+
+  const onListTouchStart = (e: React.TouchEvent) => {
+    if (window.scrollY > 8 || refreshing) {
+      pulling.current = false
+      return
+    }
+    pulling.current = true
+    pullStartY.current = e.touches[0].clientY
+  }
+
+  const onListTouchMove = (e: React.TouchEvent) => {
+    if (!pulling.current || refreshing) return
+    if (window.scrollY > 8) {
+      pulling.current = false
+      setPullPx(0)
+      return
+    }
+    const dy = e.touches[0].clientY - pullStartY.current
+    setPullPx(dy > 0 ? Math.min(dy * 0.45, 72) : 0)
+  }
+
+  const onListTouchEnd = () => {
+    if (!pulling.current) return
+    pulling.current = false
+    const shouldRefresh = pullPx >= 52
+    setPullPx(0)
+    if (shouldRefresh) onRefresh()
+  }
 
   const maxDistanceMeters = miles * METERS_PER_MI
   const processedDeals = deals
@@ -264,7 +306,24 @@ export default function FeedPage() {
 
       <DistanceSlider miles={miles} onChange={setMiles} isDark={isDark} />
 
-      <div className="px-4 mt-4">
+      <div
+        className="px-4 mt-4"
+        style={{ overscrollBehaviorY: 'contain' }}
+        onTouchStart={onListTouchStart}
+        onTouchMove={onListTouchMove}
+        onTouchEnd={onListTouchEnd}
+        onTouchCancel={onListTouchEnd}
+      >
+        <div
+          className="flex items-center justify-center overflow-hidden text-xs font-semibold"
+          style={{
+            height: refreshing ? 36 : pullPx,
+            color: '#5D20B5',
+            opacity: refreshing || pullPx > 12 ? 1 : 0,
+          }}
+        >
+          {refreshing ? 'Refreshing…' : pullPx >= 52 ? 'Release to refresh' : 'Pull to refresh'}
+        </div>
         {geoError ? (
           <div className="mb-4 p-4 rounded-xl text-xs" style={{ color: textColor, background: surface, border }}>
             {geoError}
