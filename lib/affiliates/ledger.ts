@@ -13,6 +13,13 @@ export interface LedgerEntry {
   notes?: string | null
   /** Required for payouts: the human who approved the money move. */
   createdBy?: string | null
+  /**
+   * Idempotency key, e.g. `sale_credit:<stripe_subscription_id>`.
+   * When set, a retried/racing insert with the same key hits the UNIQUE
+   * constraint and this function returns the existing row instead of
+   * double-crediting. NULL = not dedupe-protected.
+   */
+  dedupeKey?: string | null
 }
 
 export interface LedgerRow {
@@ -23,6 +30,7 @@ export interface LedgerRow {
   amount_cents: number
   currency: string
   stripe_subscription_id: string | null
+  dedupe_key: string | null
   notes: string | null
   created_by: string | null
   created_at: string
@@ -31,6 +39,11 @@ export interface LedgerRow {
 /**
  * Append one entry to the affiliate ledger. Server only (service role).
  * Payouts require a human approver id — bots never pay out on their own.
+ *
+ * Idempotent when `dedupeKey` is set: a duplicate key (retried webhook,
+ * racing requests) raises 23505 on the UNIQUE constraint, and this returns
+ * the already-written row instead of throwing. The constraint — not an
+ * app-level existence check — is the arbiter.
  */
 export async function recordLedgerEntry(entry: LedgerEntry): Promise<LedgerRow> {
   if (!entry.amountCents || entry.amountCents === 0) {
@@ -50,14 +63,26 @@ export async function recordLedgerEntry(entry: LedgerEntry): Promise<LedgerRow> 
       amount_cents: entry.amountCents,
       currency: entry.currency || 'USD',
       stripe_subscription_id: entry.stripeSubscriptionId || null,
+      dedupe_key: entry.dedupeKey || null,
       notes: entry.notes || null,
       created_by: entry.createdBy || null,
     })
     .select('*')
     .single()
 
-  if (error) throw new Error(`Ledger write failed: ${error.message}`)
-  return data as LedgerRow
+  if (!error) return data as LedgerRow
+
+  // Idempotent intake: someone already wrote this key. Return their row.
+  if (error.code === '23505' && entry.dedupeKey) {
+    const { data: existing, error: fetchError } = await supabase
+      .from('affiliate_ledger')
+      .select('*')
+      .eq('dedupe_key', entry.dedupeKey)
+      .single()
+    if (!fetchError && existing) return existing as LedgerRow
+  }
+
+  throw new Error(`Ledger write failed: ${error.message}`)
 }
 
 /** Current balance owed to an affiliate, in cents. */

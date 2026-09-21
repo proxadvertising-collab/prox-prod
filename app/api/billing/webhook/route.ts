@@ -187,6 +187,10 @@ async function maybeCreditAffiliate(
     kind: 'sale_credit',
     amountCents: creditCents,
     stripeSubscriptionId,
+    // One credit per subscription, ever. The UNIQUE constraint on dedupe_key
+    // is the arbiter against retried/racing webhook deliveries; the
+    // existence check above is just a fast path.
+    dedupeKey: `sale_credit:${stripeSubscriptionId}`,
     notes: `Sale credit for subscription ${stripeSubscriptionId}`,
   })
 }
