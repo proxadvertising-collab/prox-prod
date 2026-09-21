@@ -1,6 +1,6 @@
 'use client'
 
-import React, { createContext, useCallback, useContext, useEffect, useState } from 'react'
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react'
 
 type Theme = 'dark' | 'light'
 
@@ -32,7 +32,13 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     applyDomTheme(initial)
   }, [])
 
+  const lockRef = useRef(false)
   const toggleTheme = useCallback(() => {
+    if (lockRef.current) return
+    lockRef.current = true
+    window.setTimeout(() => {
+      lockRef.current = false
+    }, 400)
     setTheme((prev) => {
       const next: Theme = prev === 'dark' ? 'light' : 'dark'
       try {

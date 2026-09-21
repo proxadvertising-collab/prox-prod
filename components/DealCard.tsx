@@ -2,9 +2,17 @@
 
 import React from 'react'
 import { useRouter } from 'next/navigation'
-import { calculateDistance, formatDistance } from '@/lib/distance'
+import { calculateDistance } from '@/lib/distance'
 import { useTheme } from '@/contexts/ThemeContext'
 import ProfileSocials from '@/components/ProfileSocials'
+
+const METERS_PER_MI = 1609.34
+
+function formatMiles(meters: number): string {
+  const mi = meters / METERS_PER_MI
+  if (mi < 10) return `${mi.toFixed(1)} mi`
+  return `${Math.round(mi)} mi`
+}
 
 interface DealCardProps {
   deal: any
@@ -75,7 +83,7 @@ export default function DealCard({ deal, userLat, userLng }: DealCardProps) {
                 color: isDark ? '#E9D5FF' : '#5D20B5',
               }}
             >
-              {formatDistance(distance)}
+              {formatMiles(distance)}
             </span>
           )}
         </div>
