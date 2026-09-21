@@ -5,6 +5,13 @@ import { createBrowserClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import { useTheme } from '@/contexts/ThemeContext'
 
+const ALLOWED_NEXT = ['/post', '/account', '/', '/business', '/affiliate']
+
+function safeNext(raw: string | null): string {
+  if (!raw) return '/'
+  return ALLOWED_NEXT.includes(raw) ? raw : '/'
+}
+
 function GoogleMark() {
   return (
     <svg width="18" height="18" viewBox="0 0 48 48" aria-hidden>
@@ -29,6 +36,7 @@ export default function AuthButton({ initialTab = 'signin' }: { initialTab?: 'si
   const [message, setMessage] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [nextPath, setNextPath] = useState('/')
 
   const text = isDark ? '#F7F3FB' : '#1A1523'
   const muted = isDark ? 'rgba(247,243,251,0.6)' : 'rgba(26,21,35,0.55)'
@@ -43,14 +51,25 @@ export default function AuthButton({ initialTab = 'signin' }: { initialTab?: 'si
   }, [initialTab])
 
   useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    setNextPath(safeNext(params.get('next')))
+    const ref = params.get('ref')
+    if (ref) {
+      document.cookie = `prox_ref=${encodeURIComponent(ref)}; path=/; max-age=${60 * 60 * 24 * 7}`
+      setRefCode(ref)
+      return
+    }
     const match = document.cookie.match(/(^| )prox_ref=([^;]+)/)
-    if (match) setRefCode(match[2])
+    if (match) setRefCode(decodeURIComponent(match[2]))
   }, [])
+
+  const callbackUrl = () =>
+    `${window.location.origin}/auth/callback?next=${encodeURIComponent(nextPath)}`
 
   const handleGoogleLogin = async () => {
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: callbackUrl() },
     })
   }
 
@@ -61,7 +80,7 @@ export default function AuthButton({ initialTab = 'signin' }: { initialTab?: 'si
     setError('')
     const { error: otpError } = await supabase.auth.signInWithOtp({
       email,
-      options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      options: { emailRedirectTo: callbackUrl() },
     })
     setLoading(false)
     if (otpError) setError(otpError.message)
@@ -102,7 +121,7 @@ export default function AuthButton({ initialTab = 'signin' }: { initialTab?: 'si
     }
 
     setLoading(false)
-    router.push('/')
+    router.push(nextPath)
   }
 
   return (
