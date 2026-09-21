@@ -190,18 +190,25 @@ export default function DealDetailPage() {
 
             <div className="space-y-2 pt-2">
               <button
+                type="button"
                 onClick={handleGoNow}
-                className="w-full h-12 font-bold rounded-xl text-sm text-white"
-                style={{ background: '#7C3AED', boxShadow: '0 0 20px rgba(124,58,237,0.5)' }}
+                aria-label="GO NOW walking directions"
+                className="w-full flex items-center justify-center"
+                style={{ minHeight: 80, padding: 0, background: 'transparent', border: 0 }}
               >
-                GO NOW! 🚀
+                <img src="/prox-go-now-button.svg" alt="GO NOW" width={72} height={72} />
               </button>
               <button
+                type="button"
                 onClick={handleShare}
-                className="w-full h-12 font-bold rounded-xl text-sm"
-                style={{ background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(124,58,237,0.1)', color: textColor }}
+                className="w-full h-12 font-semibold rounded-xl text-sm"
+                style={{
+                  background: 'transparent',
+                  color: textColor,
+                  border: isDark ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(26,21,35,0.16)',
+                }}
               >
-                {copied ? 'Link Copied!' : 'Share Deal 🔗'}
+                {copied ? 'Link Copied' : 'Share Deal'}
               </button>
             </div>
           </div>
