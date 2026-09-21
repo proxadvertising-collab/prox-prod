@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="240" viewBox="0 0 760 240" role="img" aria-labelledby="title">
+  <title id="title">PrOx</title>
+  <defs>
+    <filter id="glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+  </defs>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M64 190V50h80c44 0 68 21 68 55s-24 55-68 55H64" stroke="#f7f3fb" stroke-width="9"/>
+    <path d="M252 190v-92m0 29c12-24 34-36 65-36" stroke="#f7f3fb" stroke-width="9"/>
+    <g transform="translate(420 120)" stroke="#ff7a35">
+      <circle r="78" opacity=".54" stroke-width="4"/><circle r="56" opacity=".70" stroke-width="4"/><circle r="34" opacity=".92" stroke-width="4"/>
+      <path d="M0-91v18M91 0H73M0 91V73M-91 0h18" stroke-width="4"/>
+      <circle r="7" fill="#ff7a35" stroke="none" filter="url(#glow)"/>
+    </g>
+    <path d="M548 56l104 132M652 56L548 188" stroke="#f7f3fb" stroke-width="9"/>
+  </g>
+</svg>

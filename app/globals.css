@@ -8,16 +8,13 @@
 }
 
 html[data-theme='dark'] body {
-  background-color: var(--void);
-  background-image: radial-gradient(ellipse at 50% -20%, var(--indigo) 0%, var(--void) 70%);
-  color: var(--pearl);
+  background: #0B0B12;
+  color: #F7F3FB;
 }
 
 html[data-theme='light'] body {
-  background-image: linear-gradient(120deg, #F8F7F4 0%, #EFE8FF 30%, #F8F7F4 60%, #E0F2FF 100%),
-    radial-gradient(ellipse at 50% -10%, rgba(124, 58, 237, 0.2) 0%, transparent 60%);
-  background-blend-mode: normal, normal;
-  color: #12203c;
+  background: #F7F3FB;
+  color: #1A1523;
 }
 
 body {
@@ -54,4 +51,16 @@ body {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+
+.go-now {
+  background: #F25A17;
+  color: #fff;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+.distance-pill {
+  background: rgba(93, 32, 181, 0.14);
+  color: #5D20B5;
 }

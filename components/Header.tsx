@@ -1,14 +1,13 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { createBrowserClient } from '@/lib/supabase/client'
 import Link from 'next/link'
-import ProxPinThumb from '@/components/ProxPinThumb'
 import { useTheme } from '@/contexts/ThemeContext'
 
 export default function Header() {
   const [user, setUser] = useState<any>(null)
-  const supabase = createBrowserClient()
+  const supabase = useMemo(() => createBrowserClient(), [])
   const { theme, toggleTheme } = useTheme()
   const isDark = theme === 'dark'
 
@@ -24,35 +23,36 @@ export default function Header() {
 
   return (
     <header
-      className={`h-14 px-4 flex justify-between items-center sticky top-0 z-40 backdrop-blur ${
-        isDark ? 'border-b border-white/10' : 'border-b border-violet-900/10'
-      }`}
+      className="h-14 px-4 flex justify-between items-center sticky top-0 z-50"
+      style={{
+        background: isDark ? '#0B0B12' : '#F7F3FB',
+        borderBottom: isDark ? '1px solid rgba(255,255,255,0.1)' : '1px solid rgba(0,0,0,0.08)',
+      }}
     >
-      <Link href="/" className="flex items-center gap-2">
-        <ProxPinThumb size={28} />
-        <div className="flex flex-col leading-none">
-          <span
-            className="wordmark text-lg"
-            style={{ color: isDark ? '#F8F7F4' : '#12203c' }}
-          >
-            PrOx
-          </span>
-          <span
-            className="text-[8px] uppercase opacity-40"
-            style={{ letterSpacing: '0.3em', color: isDark ? '#F8F7F4' : '#12203c' }}
-          >
-            Precision Proximity
-          </span>
-        </div>
+      <Link href="/" className="flex items-center gap-2 min-w-0">
+        <img
+          src={isDark ? '/prox-logo-dark.svg' : '/prox-logo-light.svg'}
+          alt="PrOx"
+          style={{ height: 28, width: 'auto' }}
+        />
+        <span
+          className="text-[9px] font-semibold uppercase shrink-0"
+          style={{ letterSpacing: '0.18em', color: isDark ? '#FF6B24' : '#5D20B5' }}
+        >
+          Get Local
+        </span>
       </Link>
 
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2">
         {user ? (
           <Link
             href="/account"
-            className={`text-xs font-semibold px-3 py-1.5 rounded-xl ${
-              isDark ? 'bg-white/10 text-white' : 'bg-violet-100 text-violet-900'
-            }`}
+            className="text-xs font-semibold px-3 py-1.5 rounded-xl"
+            style={{
+              background: isDark ? 'rgba(255,255,255,0.1)' : '#fff',
+              color: isDark ? '#F7F3FB' : '#1A1523',
+              border: isDark ? 'none' : '1px solid rgba(0,0,0,0.08)',
+            }}
           >
             Account
           </Link>
@@ -60,7 +60,7 @@ export default function Header() {
           <Link
             href="/login"
             className="text-xs font-semibold px-3 py-1.5 rounded-xl text-white"
-            style={{ background: '#7C3AED' }}
+            style={{ background: '#5D20B5' }}
           >
             Login
           </Link>
@@ -69,28 +69,11 @@ export default function Header() {
         <button
           type="button"
           onClick={toggleTheme}
-          className="relative flex items-center rounded-full transition-colors"
-          style={{
-            width: 44,
-            height: 28,
-            background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(124,58,237,0.12)',
-            border: isDark ? '1px solid rgba(255,255,255,0.15)' : '1px solid rgba(124,58,237,0.2)',
-          }}
+          className="text-xs font-bold px-3 py-1.5 rounded-xl text-white"
+          style={{ background: isDark ? '#FF6B24' : '#5D20B5', minWidth: 64 }}
           aria-label="Toggle theme"
         >
-          <span
-            className="absolute flex items-center justify-center rounded-full transition-transform"
-            style={{
-              width: 22,
-              height: 22,
-              left: 2,
-              transform: isDark ? 'translateX(16px)' : 'translateX(0px)',
-              background: isDark ? '#141432' : '#ffffff',
-              boxShadow: '0 0 8px rgba(124,58,237,0.4)',
-            }}
-          >
-            <span className="text-[11px]">{isDark ? '🌙' : '☀️'}</span>
-          </span>
+          {isDark ? 'Light' : 'Dark'}
         </button>
       </div>
     </header>

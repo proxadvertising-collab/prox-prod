@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="320" viewBox="0 0 320 320" role="img" aria-labelledby="title">
+  <title id="title">PrOx radar O</title>
+  <defs><filter id="glow" x="-80%" y="-80%" width="260%" height="260%"><feGaussianBlur stdDeviation="9" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs>
+  <g fill="none" stroke="#ff6b24" stroke-linecap="round">
+    <circle cx="160" cy="160" r="128" opacity=".50" stroke-width="5"/><circle cx="160" cy="160" r="92" opacity=".70" stroke-width="5"/><circle cx="160" cy="160" r="56" opacity=".94" stroke-width="5"/>
+    <path d="M160 12v30M308 160h-30M160 308v-30M12 160h30" stroke-width="6"/>
+    <circle cx="160" cy="160" r="8" fill="#ff6b24" stroke="none" filter="url(#glow)"/>
+  </g>
+</svg>

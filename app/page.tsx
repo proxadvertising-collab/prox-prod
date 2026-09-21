@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { createBrowserClient } from '@/lib/supabase/client'
 import { calculateDistance } from '@/lib/distance'
 import DealCard from '@/components/DealCard'
@@ -108,7 +108,7 @@ function DistanceSlider({ distanceKm, onChange, unit, onToggleUnit, isDark }: {
             const i = Number(e.target.value)
             onChange(STEPS_KM[i])
           }}
-          className="absolute w-full opacity-0 cursor-pointer"
+          className="absolute w-full cursor-pointer" style={{ opacity: 0.01, height: 44, zIndex: 10 }}
           style={{
             height: '44px',
             margin: 0,
@@ -132,11 +132,11 @@ export default function FeedPage() {
   const [deals, setDeals] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [activeChip, setActiveChip] = useState('All')
-  const [unit, setUnit] = useState<'km' | 'mi'>('km')
+  const [unit, setUnit] = useState<'km' | 'mi'>('mi')
   const [distanceKm, setDistanceKm] = useState(STEPS_KM[5])
-  const supabase = createBrowserClient()
+  const supabase = useMemo(() => createBrowserClient(), [])
 
-  useEffect(() => { try { setUnit(navigator.language === 'en-US'? 'mi' : 'km') } catch {} }, [])
+  useEffect(() => { setUnit('mi') }, [])
 
   useEffect(() => {
     if (!navigator.geolocation) { setGeoError('Geolocation not supported'); setLoading(false); return }
@@ -146,7 +146,7 @@ export default function FeedPage() {
   useEffect(() => {
     async function fetchDeals() {
       const now = new Date().toISOString()
-      const { data, error } = await supabase.from('deals').select('*, businesses(name, currency)').gt('expires_at', now).eq('is_active', true).order('created_at', { ascending: false })
+      const { data, error } = await supabase.from('deals').select('*, businesses(name, currency)').eq('is_active', true).or(`expires_at.is.null,expires_at.gt.${now}`).order('created_at', { ascending: false })
       if (!error && data) setDeals(data)
       setLoading(false)
     }
@@ -156,7 +156,7 @@ export default function FeedPage() {
   }, [supabase])
 
   const maxDistanceMeters = distanceKm * 1000
-  const processedDeals = deals.map(d => ({...d, distance: userLat!== null && userLng!== null? calculateDistance(userLat, userLng, d.lat, d.lng) : null })).filter(d => {
+  const processedDeals = deals.map(d => ({...d, distance: userLat!== null && userLng!== null? calculateDistance(userLat, userLng, Number(d.lat), Number(d.lng)) : null })).filter(d => {
     if (d.distance!== null && d.distance > maxDistanceMeters) return false
     if (activeChip === 'All') return true
     if (activeChip === 'Deals') return d.post_type === 'deal'
