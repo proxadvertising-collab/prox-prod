@@ -73,6 +73,21 @@ export default function AuthButton({ initialTab = 'signin' }: { initialTab?: 'si
     })
   }
 
+  const handlePasswordSignIn = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setMessage('')
+    setError('')
+    const { error: pwError } = await supabase.auth.signInWithPassword({ email, password })
+    setLoading(false)
+    if (pwError) {
+      setError(pwError.message)
+      return
+    }
+    router.push(nextPath)
+    router.refresh()
+  }
+
   const handleMagicLink = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
@@ -122,6 +137,7 @@ export default function AuthButton({ initialTab = 'signin' }: { initialTab?: 'si
 
     setLoading(false)
     router.push(nextPath)
+    router.refresh()
   }
 
   return (
@@ -181,7 +197,7 @@ export default function AuthButton({ initialTab = 'signin' }: { initialTab?: 'si
             <div className="flex-1 h-px" style={{ background: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(26,21,35,0.12)' }} />
           </div>
 
-          <form onSubmit={handleMagicLink} className="space-y-3">
+          <form onSubmit={handlePasswordSignIn} className="space-y-3">
             <input
               type="email"
               required
@@ -191,9 +207,35 @@ export default function AuthButton({ initialTab = 'signin' }: { initialTab?: 'si
               className="w-full h-12 px-3 rounded-xl text-sm"
               style={field}
             />
+            <input
+              type="password"
+              required
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="w-full h-12 px-3 rounded-xl text-sm"
+              style={field}
+            />
             <button
               type="submit"
               disabled={loading}
+              className="w-full h-12 rounded-xl text-sm font-bold text-white"
+              style={{ background: '#F25A17' }}
+            >
+              {loading ? 'Signing in…' : 'Sign in'}
+            </button>
+          </form>
+
+          <div className="flex items-center gap-3">
+            <div className="flex-1 h-px" style={{ background: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(26,21,35,0.12)' }} />
+            <span className="text-[11px] uppercase tracking-wide" style={{ color: muted }}>or</span>
+            <div className="flex-1 h-px" style={{ background: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(26,21,35,0.12)' }} />
+          </div>
+
+          <form onSubmit={handleMagicLink} className="space-y-3">
+            <button
+              type="submit"
+              disabled={loading || !email}
               className="w-full h-12 rounded-xl text-sm font-bold text-white"
               style={{ background: '#5D20B5' }}
             >

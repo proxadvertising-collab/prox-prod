@@ -28,7 +28,11 @@ export default function AccountPage() {
   useEffect(() => {
     async function loadData() {
       const { data: { user } } = await supabase.auth.getUser()
-      if (!user) { router.push('/login'); return }
+      if (!user) {
+        setLoading(false)
+        router.push('/login')
+        return
+      }
       setUser(user)
 
       let { data: prof } = await supabase.from('profiles').select('*').eq('id', user.id).single()
