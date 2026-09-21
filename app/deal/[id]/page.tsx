@@ -193,16 +193,17 @@ export default function DealDetailPage() {
                 type="button"
                 onClick={handleGoNow}
                 aria-label="GO NOW walking directions"
-                className="w-full flex items-center justify-center"
-                style={{ minHeight: 80, padding: 0, background: 'transparent', border: 0 }}
+                className="w-full font-extrabold rounded-xl text-white tracking-wide"
+                style={{ background: '#F25A17', minHeight: 56, fontSize: 16, border: 0 }}
               >
-                <img src="/prox-go-now-button.svg" alt="GO NOW" width={72} height={72} />
+                GO NOW
               </button>
               <button
                 type="button"
                 onClick={handleShare}
-                className="w-full h-12 font-semibold rounded-xl text-sm"
+                className="w-full font-semibold rounded-xl text-sm"
                 style={{
+                  minHeight: 48,
                   background: 'transparent',
                   color: textColor,
                   border: isDark ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(26,21,35,0.16)',

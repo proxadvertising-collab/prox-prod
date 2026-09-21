@@ -8,8 +8,8 @@ import ProfileSocials from '@/components/ProfileSocials'
 
 const METERS_PER_MI = 1609.34
 const WALK_M_PER_MIN = 80
-const THUMB = 76
-const GO_NOW = 52
+const THUMB = 80
+const GO_NOW = 80
 
 function formatMiles(meters: number): string {
   const mi = meters / METERS_PER_MI
