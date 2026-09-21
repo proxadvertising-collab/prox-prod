@@ -21,5 +21,6 @@ export async function GET(request: Request) {
     }
   }
 
-  return NextResponse.redirect(`${requestUrl.origin}/login`)
+  const login = next === '/' ? '/login' : `/login?next=${encodeURIComponent(next)}`
+  return NextResponse.redirect(`${requestUrl.origin}${login}`)
 }

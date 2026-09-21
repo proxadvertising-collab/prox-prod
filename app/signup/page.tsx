@@ -1,13 +1,20 @@
 'use client'
 
-import React from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import AuthButton from '@/components/AuthButton'
+import { createBrowserClient } from '@/lib/supabase/client'
 import { useTheme } from '@/contexts/ThemeContext'
 
 export default function SignupPage() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
+  const supabase = useMemo(() => createBrowserClient(), [])
+  const [loggedIn, setLoggedIn] = useState(false)
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setLoggedIn(!!data.user))
+  }, [supabase])
   const text = isDark ? '#F7F3FB' : '#1A1523'
   const muted = isDark ? 'rgba(247,243,251,0.62)' : 'rgba(26,21,35,0.58)'
   const card = {
@@ -47,14 +54,14 @@ export default function SignupPage() {
 
       <div className="w-full grid grid-cols-2 gap-3 mt-4">
         <Link
-          href="/affiliate"
+          href={loggedIn ? '/account' : '/signup?next=/account'}
           className="h-11 rounded-xl text-sm font-semibold flex items-center justify-center"
           style={sideBtn}
         >
           Affiliate
         </Link>
         <Link
-          href="/business"
+          href={loggedIn ? '/post' : '/signup?next=/post'}
           className="h-11 rounded-xl text-sm font-semibold flex items-center justify-center"
           style={sideBtn}
         >

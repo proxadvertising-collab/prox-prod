@@ -194,7 +194,7 @@ export default function DealDetailPage() {
                 onClick={handleGoNow}
                 aria-label="GO NOW walking directions"
                 className="w-full font-extrabold rounded-xl text-white tracking-wide"
-                style={{ background: '#F25A17', minHeight: 56, fontSize: 16, border: 0 }}
+                style={{ background: '#F25A17', minHeight: 64, fontSize: 17, border: 0 }}
               >
                 GO NOW
               </button>

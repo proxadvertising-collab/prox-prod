@@ -2,12 +2,14 @@
 
 import React, { useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/client'
 import { useTheme } from '@/contexts/ThemeContext'
 
 export default function AffiliatePage() {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
+  const router = useRouter()
   const supabase = useMemo(() => createBrowserClient(), [])
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null)
   const text = isDark ? '#F7F3FB' : '#1A1523'
@@ -18,8 +20,11 @@ export default function AffiliatePage() {
   }
 
   useEffect(() => {
-    supabase.auth.getUser().then(({ data }) => setLoggedIn(!!data.user))
-  }, [supabase])
+    supabase.auth.getUser().then(({ data }) => {
+      if (data.user) router.replace('/account')
+      else setLoggedIn(false)
+    })
+  }, [router, supabase])
 
   return (
     <main className="px-4 py-8">
