@@ -4,23 +4,22 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { createBrowserClient } from '@/lib/supabase/client'
 import { calculateDistance } from '@/lib/distance'
 import DealCard from '@/components/DealCard'
-import ProxPinThumb from '@/components/ProxPinThumb'
 import { useTheme } from '@/contexts/ThemeContext'
 
 const CATEGORY_CHIPS = [
-  { label: 'All', emoji: '' },
-  { label: 'Restaurants', emoji: '🍴' },
-  { label: 'Hotels', emoji: '🛏' },
-  { label: 'Coffee', emoji: '☕' },
-  { label: 'Attractions', emoji: '🎯' },
-  { label: 'Bars', emoji: '🍺' },
-  { label: 'Shopping', emoji: '🛍' },
-  { label: 'Services', emoji: '💈' },
-  { label: 'Wellness', emoji: '💪' },
-  { label: 'Street Food', emoji: '🥤' },
-  { label: 'Convenience', emoji: '📦' },
-  { label: 'Deals', emoji: '🔥' },
-  { label: 'Open Now', emoji: '📍' },
+  { key: 'All', label: 'All' },
+  { key: 'Restaurants', label: 'Food' },
+  { key: 'Coffee', label: 'Coffee' },
+  { key: 'Bars', label: 'Bars' },
+  { key: 'Street Food', label: 'Street food' },
+  { key: 'Hotels', label: 'Stay' },
+  { key: 'Attractions', label: 'See' },
+  { key: 'Shopping', label: 'Shop' },
+  { key: 'Services', label: 'Services' },
+  { key: 'Wellness', label: 'Wellness' },
+  { key: 'Convenience', label: 'Store' },
+  { key: 'Deals', label: 'Deals' },
+  { key: 'Open Now', label: 'Open' },
 ]
 
 const METERS_PER_MI = 1609.34
@@ -46,22 +45,22 @@ function DistanceSlider({
 
   return (
     <div
-      className="mx-4 mt-3 p-4 rounded-2xl"
+      className="mx-4 mt-2 px-4 pt-4 pb-3 rounded-2xl"
       style={{ touchAction: 'none', userSelect: 'none', background: surface, border }}
     >
-      <div className="flex justify-between items-center mb-3">
-        <span className="text-xs font-medium opacity-60" style={{ color: text }}>
-          Distance
+      <div className="flex justify-between items-baseline mb-3">
+        <span className="text-[13px] font-semibold" style={{ color: text }}>
+          How far should Prox look?
         </span>
-        <span className="text-sm font-bold" style={{ color: text }}>
+        <span className="text-[15px] font-bold tabular-nums" style={{ color: '#5D20B5' }}>
           {STEPS_MI[currentIndex]} mi
         </span>
       </div>
 
-      <div className="relative flex items-center" style={{ height: '44px', touchAction: 'none' }}>
+      <div className="relative flex items-center" style={{ height: 44, touchAction: 'none' }}>
         <div
           className="absolute w-full rounded-full"
-          style={{ height: '12px', background: isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)' }}
+          style={{ height: 6, background: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(26,21,35,0.1)' }}
         >
           <div
             className="h-full rounded-full"
@@ -71,10 +70,17 @@ function DistanceSlider({
 
         <div
           className="absolute top-1/2 pointer-events-none"
-          style={{ left: `${percent}%`, transform: 'translate(-50%,-50%)', zIndex: 5 }}
-        >
-          <ProxPinThumb size={36} />
-        </div>
+          style={{
+            left: `${percent}%`,
+            transform: 'translate(-50%,-50%)',
+            zIndex: 5,
+            width: 22,
+            height: 22,
+            borderRadius: 11,
+            background: '#5D20B5',
+            boxShadow: `0 0 0 3px ${isDark ? '#12121A' : '#FFFFFF'}`,
+          }}
+        />
 
         <input
           type="range"
@@ -89,7 +95,7 @@ function DistanceSlider({
           className="absolute w-full cursor-pointer"
           style={{
             opacity: 0.01,
-            height: '44px',
+            height: 44,
             margin: 0,
             zIndex: 10,
             WebkitAppearance: 'none',
@@ -97,6 +103,15 @@ function DistanceSlider({
           }}
           aria-label="Distance filter in miles"
         />
+      </div>
+
+      <div className="flex justify-between mt-1">
+        <span className="text-[10px] font-medium" style={{ color: isDark ? 'rgba(247,243,251,0.45)' : 'rgba(26,21,35,0.4)' }}>
+          {STEPS_MI[0]} mi
+        </span>
+        <span className="text-[10px] font-medium" style={{ color: isDark ? 'rgba(247,243,251,0.45)' : 'rgba(26,21,35,0.4)' }}>
+          {STEPS_MI[STEPS_MI.length - 1]} mi
+        </span>
       </div>
     </div>
   )
@@ -186,23 +201,26 @@ export default function FeedPage() {
     <main className="min-h-screen pb-20 flex flex-col">
       <div className="flex gap-2 overflow-x-auto px-4 py-3 sticky top-14 z-30 backdrop-blur no-scrollbar">
         {CATEGORY_CHIPS.map((chip) => {
-          const isActive = activeChip === chip.label
+          const isActive = activeChip === chip.key
           return (
             <button
-              key={chip.label}
+              key={chip.key}
               type="button"
-              onClick={() => setActiveChip(chip.label)}
-              className="shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold border"
-              style={
-                isActive
-                  ? { background: '#5D20B5', color: '#F7F3FB', borderColor: '#5D20B5' }
+              onClick={() => setActiveChip(chip.key)}
+              className="shrink-0 rounded-full text-[13px] font-semibold"
+              style={{
+                minHeight: 40,
+                padding: '0 16px',
+                background: isActive ? '#5D20B5' : isDark ? 'rgba(255,255,255,0.06)' : '#FFFFFF',
+                color: isActive ? '#F7F3FB' : textColor,
+                border: isActive
+                  ? '1px solid #5D20B5'
                   : isDark
-                    ? { background: 'rgba(255,255,255,0.08)', color: textColor, borderColor: 'rgba(255,255,255,0.1)' }
-                    : { background: '#FFFFFF', color: textColor, borderColor: 'rgba(26,21,35,0.08)' }
-              }
+                    ? '1px solid rgba(255,255,255,0.08)'
+                    : '1px solid rgba(26,21,35,0.08)',
+              }}
             >
-              {chip.emoji ? <span>{chip.emoji}</span> : null}
-              <span>{chip.label}</span>
+              {chip.label}
             </button>
           )
         })}
