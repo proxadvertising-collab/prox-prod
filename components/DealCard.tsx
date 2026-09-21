@@ -7,11 +7,30 @@ import { useTheme } from '@/contexts/ThemeContext'
 import ProfileSocials from '@/components/ProfileSocials'
 
 const METERS_PER_MI = 1609.34
+const WALK_M_PER_MIN = 80
+const THUMB = 76
+const GO_NOW = 52
 
 function formatMiles(meters: number): string {
   const mi = meters / METERS_PER_MI
   if (mi < 10) return `${mi.toFixed(1)} mi`
   return `${Math.round(mi)} mi`
+}
+
+function walkMins(meters: number): number {
+  return Math.max(1, Math.round(meters / WALK_M_PER_MIN))
+}
+
+function statusLine(deal: any): string | null {
+  if (deal.post_type === 'open') return 'Open'
+  if (!deal.expires_at) return null
+  const diff = new Date(deal.expires_at).getTime() - Date.now()
+  if (diff <= 0) return null
+  const hours = Math.floor(diff / (1000 * 60 * 60))
+  const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60))
+  if (hours >= 24) return `Ends in ${Math.floor(hours / 24)}d`
+  if (hours > 0) return `Ends in ${hours}h ${minutes}m`
+  return `Ends in ${minutes}m`
 }
 
 interface DealCardProps {
@@ -25,7 +44,7 @@ export default function DealCard({ deal, userLat, userLng }: DealCardProps) {
   const { theme } = useTheme()
   const isDark = theme === 'dark'
   const titleColor = isDark ? '#F7F3FB' : '#1A1523'
-  const muted = isDark ? 'rgba(247,243,251,0.65)' : 'rgba(26,21,35,0.62)'
+  const muted = isDark ? 'rgba(247,243,251,0.62)' : 'rgba(26,21,35,0.58)'
 
   const distance =
     userLat !== null && userLng !== null
@@ -39,99 +58,85 @@ export default function DealCard({ deal, userLat, userLng }: DealCardProps) {
   }
 
   const price = deal.price_display || deal.original_price || null
+  const status = statusLine(deal)
+  const distanceText =
+    distance !== null
+      ? `${formatMiles(distance)} · ${walkMins(distance)} min walk`
+      : null
 
   return (
     <article
       onClick={() => router.push(`/deal/${deal.id}`)}
-      className="flex flex-col overflow-hidden cursor-pointer"
+      className="flex items-center gap-3 cursor-pointer"
       style={{
-        borderRadius: 20,
+        padding: 12,
+        borderRadius: 16,
         background: isDark ? '#12121A' : '#FFFFFF',
         border: isDark ? '1px solid rgba(255,255,255,0.08)' : '1px solid rgba(26,21,35,0.08)',
-        boxShadow: isDark ? '0 8px 24px rgba(0,0,0,0.35)' : '0 8px 24px rgba(26,21,35,0.06)',
       }}
     >
       {deal.image_url ? (
         <img
           src={deal.image_url}
-          alt={deal.title}
-          className="w-full object-cover"
-          style={{ height: 224 }}
+          alt=""
+          className="shrink-0 object-cover"
+          style={{ width: THUMB, height: THUMB, borderRadius: 14 }}
         />
       ) : (
         <div
-          className="w-full flex items-center justify-center"
-          style={{ height: 224, background: isDark ? '#1A1523' : '#EDE7F6' }}
+          className="shrink-0 flex items-center justify-center"
+          style={{
+            width: THUMB,
+            height: THUMB,
+            borderRadius: 14,
+            background: isDark ? '#1A1523' : '#EDE7F6',
+          }}
         >
-          <img src="/prox-radar-o.svg" alt="" width={56} height={56} />
+          <img src="/prox-radar-o.svg" alt="" width={36} height={36} />
         </div>
       )}
 
-      <div className="flex flex-col gap-2.5 p-4">
-        <div className="flex items-start justify-between gap-3">
-          <h3
-            className="text-[17px] font-bold leading-snug line-clamp-2"
-            style={{ color: titleColor }}
-          >
-            {deal.title}
-          </h3>
-          {distance !== null && (
-            <span
-              className="shrink-0 text-[11px] font-bold px-2.5 py-1 rounded-full"
-              style={{
-                background: 'rgba(93,32,181,0.14)',
-                color: isDark ? '#E9D5FF' : '#5D20B5',
-              }}
-            >
-              {formatMiles(distance)}
-            </span>
-          )}
-        </div>
-
-        <p className="text-[13px] font-medium line-clamp-1" style={{ color: muted }}>
+      <div className="flex-1 min-w-0 flex flex-col gap-0.5">
+        <h3
+          className="text-[15px] font-bold leading-snug line-clamp-2"
+          style={{ color: titleColor }}
+        >
+          {deal.title}
+        </h3>
+        <p className="text-[12px] font-medium line-clamp-1" style={{ color: muted }}>
           {deal.businesses?.name || 'Local Business'}
         </p>
-
-        {price && (
-          <p className="text-2xl font-black" style={{ color: '#F25A17' }}>
-            {price}
-            {deal.original_price && deal.price_display && deal.original_price !== deal.price_display ? (
-              <span className="ml-2 text-[12px] font-medium line-through" style={{ color: muted }}>
-                {deal.original_price}
-              </span>
-            ) : null}
+        {distanceText ? (
+          <p className="text-[12px] font-semibold line-clamp-1" style={{ color: '#5D20B5' }}>
+            {distanceText}
           </p>
-        )}
-
-        <div className="min-h-[24px]">
-          <ProfileSocials
-            profile={deal.profiles || deal.profile}
-            textColor={isDark ? '#F7F3FB' : '#1A1523'}
-            compact
-          />
-        </div>
-
-        <span
-          className="self-start text-[10px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full"
-          style={{
-            background:
-              deal.post_type === 'open' ? 'rgba(93,32,181,0.16)' : 'rgba(242,90,23,0.14)',
-            color: deal.post_type === 'open' ? (isDark ? '#D8B4FE' : '#5D20B5') : '#F25A17',
-          }}
-        >
-          {deal.post_type === 'open' ? "We're Open" : 'Deal'}
-        </span>
-
-        <button
-          type="button"
-          onClick={handleGoNow}
-          aria-label="GO NOW walking directions"
-          className="w-full flex items-center justify-center"
-          style={{ minHeight: 64, padding: 0, background: 'transparent', border: 0 }}
-        >
-          <img src="/prox-go-now-button.svg" alt="GO NOW" width={64} height={64} />
-        </button>
+        ) : null}
+        {price ? (
+          <p className="text-[12px] font-bold line-clamp-1" style={{ color: '#F25A17' }}>
+            {price}
+          </p>
+        ) : null}
+        {status ? (
+          <p className="text-[11px] font-medium line-clamp-1" style={{ color: muted }}>
+            {status}
+          </p>
+        ) : null}
+        <ProfileSocials
+          profile={deal.profiles || deal.profile}
+          textColor={isDark ? '#F7F3FB' : '#1A1523'}
+          compact
+        />
       </div>
+
+      <button
+        type="button"
+        onClick={handleGoNow}
+        aria-label="GO NOW walking directions"
+        className="shrink-0"
+        style={{ width: GO_NOW, height: GO_NOW, padding: 0, background: 'transparent', border: 0 }}
+      >
+        <img src="/prox-go-now-button.svg" alt="GO NOW" width={GO_NOW} height={GO_NOW} />
+      </button>
     </article>
   )
 }
