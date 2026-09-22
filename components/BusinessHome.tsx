@@ -19,8 +19,19 @@ export default function BusinessHome() {
   const [gmaps, setGmaps] = useState('')
   const [website, setWebsite] = useState('')
   const [saveStatus, setSaveStatus] = useState('')
+  const [billingNote, setBillingNote] = useState<'success' | 'cancelled' | null>(null)
   const router = useRouter()
   const supabase = useMemo(() => createBrowserClient(), [])
+
+  useEffect(() => {
+    const v = new URLSearchParams(window.location.search).get('billing')
+    if (v === 'success' || v === 'cancelled') setBillingNote(v)
+  }, [])
+
+  const clearBillingQuery = () => {
+    setBillingNote(null)
+    router.replace('/business')
+  }
 
   useEffect(() => {
     async function loadData() {
@@ -102,6 +113,29 @@ export default function BusinessHome() {
           Logout
         </button>
       </div>
+
+      {billingNote ? (
+        <div
+          className="rounded-xl p-4 flex items-start justify-between gap-3"
+          style={{
+            background: billingNote === 'success' ? '#ecfdf5' : '#fff7ed',
+            border: billingNote === 'success' ? '1px solid #a7f3d0' : '1px solid #fed7aa',
+          }}
+        >
+          <p className="text-sm font-medium text-gray-800">
+            {billingNote === 'success'
+              ? 'You’re subscribed — keep posting live deals.'
+              : 'Checkout cancelled — you can subscribe anytime from Post when you hit the paywall.'}
+          </p>
+          <button
+            type="button"
+            onClick={clearBillingQuery}
+            className="text-xs font-bold text-gray-500 shrink-0"
+          >
+            Dismiss
+          </button>
+        </div>
+      ) : null}
 
       <Link
         href="/post"
