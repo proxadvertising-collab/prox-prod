@@ -16,9 +16,11 @@ export async function GET(request: Request) {
   const twoHoursLater = new Date(now.getTime() + 2 * 60 * 60 * 1000).toISOString()
   const nowIso = now.toISOString()
 
+  // v1 live deals use expires_at null (until replaced) — skip them; no expiry emails.
   const { data: deals, error } = await supabase
     .from('deals')
     .select('*, businesses(owner_id)')
+    .not('expires_at', 'is', null)
     .lt('expires_at', twoHoursLater)
     .gt('expires_at', nowIso)
     .eq('email_sent', false)

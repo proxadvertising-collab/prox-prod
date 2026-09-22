@@ -15,10 +15,12 @@ export async function GET(request: Request) {
   const threeHoursLater = new Date(now.getTime() + 3 * 60 * 60 * 1000)
   const threeHoursFiveMinLater = new Date(now.getTime() + (3 * 60 * 60 + 5 * 60) * 1000)
 
+  // v1 live deals use expires_at null (until replaced) — skip them; no expiry emails.
   const { data: deals, error } = await supabase
     .from('deals')
     .select('*')
     .eq('is_active', true)
+    .not('expires_at', 'is', null)
     .gte('expires_at', threeHoursLater.toISOString())
     .lte('expires_at', threeHoursFiveMinLater.toISOString())
 

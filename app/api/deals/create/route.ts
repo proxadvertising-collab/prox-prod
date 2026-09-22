@@ -71,6 +71,16 @@ export async function POST(request: Request) {
     )
   }
 
+  // v1 = replace-to-update: one live deal; expires_at null means until replaced.
+  const { error: pauseErr } = await supabase
+    .from('deals')
+    .update({ is_active: false })
+    .eq('business_id', business.id)
+    .eq('is_active', true)
+  if (pauseErr) {
+    return NextResponse.json({ error: pauseErr.message }, { status: 500 })
+  }
+
   const { data: insertedDeal, error: dealErr } = await supabase
     .from('deals')
     .insert({
