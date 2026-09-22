@@ -23,6 +23,8 @@ export default function PostDealPage() {
   const [accuracy, setAccuracy] = useState<number | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [paywall, setPaywall] = useState(false)
+  const [checkoutBusy, setCheckoutBusy] = useState(false)
   const [successDealId, setSuccessDealId] = useState<string | null>(null)
   const [copied, setCopied] = useState(false)
 
@@ -55,18 +57,6 @@ export default function PostDealPage() {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) { router.push('/login'); return }
 
-    let { data: business } = await supabase.from('businesses').select('id').eq('owner_id', user.id).single()
-
-    if (!business) {
-      const { data: newBiz, error: bizErr } = await supabase.from('businesses').insert({
-        owner_id: user.id,
-        name: user.email?.split('@')[0] + "'s Business",
-        lat, lng,
-      }).select('id').single()
-      if (bizErr || !newBiz) { setLoading(false); setError('Failed to create business.'); return }
-      business = newBiz
-    }
-
     let imageUrl = null
     if (imageFile) {
       const fileExt = imageFile.name.split('.').pop()
@@ -77,26 +67,53 @@ export default function PostDealPage() {
       }
     }
 
-    const { data: insertedDeal, error: dealErr } = await supabase.from('deals').insert({
-      business_id: business.id,
-      owner_id: user.id,
-      title, description,
-      price_display: postType === 'deal' ? priceDisplay : null,
-      original_price: postType === 'deal' ? originalPrice || null : null,
-      post_type: postType,
-      categories,
-      image_url: imageUrl,
-      lat, lng,
-      expires_at: null,
-      is_active: true,
-    }).select('id').single()
-
+    const res = await fetch('/api/deals/create', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        title,
+        description,
+        post_type: postType,
+        price_display: postType === 'deal' ? priceDisplay : null,
+        original_price: postType === 'deal' ? originalPrice || null : null,
+        categories,
+        image_url: imageUrl,
+        lat,
+        lng,
+      }),
+    })
+    const data = await res.json().catch(() => ({}))
     setLoading(false)
-    if (dealErr) {
-      setError(dealErr.message)
-    } else if (insertedDeal) {
-      setSuccessDealId(insertedDeal.id)
+    if (res.status === 401) {
+      router.push('/login')
+      return
     }
+    if (res.status === 402) {
+      setPaywall(true)
+      return
+    }
+    if (!res.ok) {
+      setError(data.error || 'Failed to post deal.')
+      return
+    }
+    if (data.id) setSuccessDealId(data.id)
+  }
+
+  const handleCheckout = async () => {
+    setCheckoutBusy(true)
+    setError('')
+    const res = await fetch('/api/billing/checkout', { method: 'POST' })
+    const data = await res.json().catch(() => ({}))
+    setCheckoutBusy(false)
+    if (res.status === 409) {
+      setError(data.error || 'Already subscribed.')
+      return
+    }
+    if (!res.ok || !data.url) {
+      setError(data.error || 'Checkout is not configured (missing STRIPE_SECRET_KEY).')
+      return
+    }
+    window.location.href = data.url
   }
 
   const shareLink = successDealId ? `https://prox.to/d/${successDealId}` : ''
@@ -104,6 +121,25 @@ export default function PostDealPage() {
     navigator.clipboard.writeText(shareLink)
     setCopied(true)
     setTimeout(() => setCopied(false), 2000)
+  }
+
+  if (paywall) {
+    return (
+      <main className="min-h-screen bg-white max-w-[430px] mx-auto px-4 py-12 pb-32 shadow-2xl flex flex-col items-center justify-center text-center space-y-6">
+        <h1 className="text-2xl font-black text-gray-900">Keep posting</h1>
+        <p className="text-sm text-gray-600">First deal was free. Subscribe $199/yr to keep posting.</p>
+        {error && <div className="w-full p-3 bg-red-50 text-red-700 text-sm rounded-xl">{error}</div>}
+        <button
+          type="button"
+          onClick={handleCheckout}
+          disabled={checkoutBusy}
+          className="w-full h-12 bg-black hover:bg-gray-800 text-white font-bold rounded-xl text-sm"
+        >
+          {checkoutBusy ? 'Opening checkout…' : 'Subscribe $199/yr'}
+        </button>
+        <a href="/business" className="text-sm font-semibold text-gray-500 underline">Back to business</a>
+      </main>
+    )
   }
 
   if (successDealId) {

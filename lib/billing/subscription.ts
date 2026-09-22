@@ -26,3 +26,22 @@ export async function hasPostingAccess(businessId: string): Promise<boolean> {
   const access = await getBusinessAccess(businessId)
   return access === 'active' || access === 'trialing'
 }
+
+export type CanPostResult =
+  | { ok: true }
+  | { ok: false; reason: 'paywall'; checkoutHint: true }
+
+/**
+ * First deal for a business is free. Later posts need active or trialing access.
+ */
+export async function canPostDeal(businessId: string): Promise<CanPostResult> {
+  const supabase = createServiceClient()
+  const { count, error } = await supabase
+    .from('deals')
+    .select('id', { count: 'exact', head: true })
+    .eq('business_id', businessId)
+  if (error) throw error
+  if (!count) return { ok: true }
+  if (await hasPostingAccess(businessId)) return { ok: true }
+  return { ok: false, reason: 'paywall', checkoutHint: true }
+}

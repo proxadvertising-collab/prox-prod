@@ -96,8 +96,8 @@ export async function POST() {
         ...(trialDays > 0 ? { trial_period_days: trialDays } : {}),
         metadata: { business_id: business.id },
       },
-      success_url: `${APP_URL}/account?billing=success`,
-      cancel_url: `${APP_URL}/account?billing=cancelled`,
+      success_url: `${APP_URL}/business?billing=success`,
+      cancel_url: `${APP_URL}/business?billing=cancelled`,
     })
 
     // One row per business. The webhook later UPDATEs this same row by business_id.
