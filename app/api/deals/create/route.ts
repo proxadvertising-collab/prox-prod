@@ -1,9 +1,46 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
+import { createServiceClient } from '@/lib/supabase/service'
 import { canPostDeal } from '@/lib/billing/subscription'
 import { isPostType } from '@/lib/post-type'
 
-export async function POST(request: Request) {
+function cookieRef(request: NextRequest, body: any): string {
+  const fromCookie = request.cookies.get('prox_ref')?.value
+  const fromBody = body?.ref || body?.code || body?.referred_by_code
+  const raw = String(fromCookie || fromBody || '').trim()
+  if (!raw) return ''
+  try {
+    return decodeURIComponent(raw)
+  } catch {
+    return raw
+  }
+}
+
+async function validReferralCode(raw: string): Promise<string | null> {
+  const code = raw.trim()
+  if (!code) return null
+  try {
+    const admin = createServiceClient()
+    const upper = code.toUpperCase()
+    const { data: aff } = await admin
+      .from('affiliates')
+      .select('code')
+      .eq('code', upper)
+      .maybeSingle()
+    if (aff?.code) return aff.code
+    const { data: prof } = await admin
+      .from('profiles')
+      .select('referral_code')
+      .eq('referral_code', upper)
+      .maybeSingle()
+    if (prof?.referral_code) return prof.referral_code
+  } catch {
+    return null
+  }
+  return null
+}
+
+export async function POST(request: NextRequest) {
   const supabase = await createServerClient()
   const {
     data: { user },
@@ -36,9 +73,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Title and description are required.' }, { status: 400 })
   }
 
+  const refStamp = await validReferralCode(cookieRef(request, body))
+
   let { data: business } = await supabase
     .from('businesses')
-    .select('id')
+    .select('id, referred_by_code')
     .eq('owner_id', user.id)
     .single()
 
@@ -50,13 +89,23 @@ export async function POST(request: Request) {
         name: user.email?.split('@')[0] + "'s Business",
         lat,
         lng,
+        ...(refStamp ? { referred_by_code: refStamp } : {}),
       })
-      .select('id')
+      .select('id, referred_by_code')
       .single()
     if (bizErr || !newBiz) {
       return NextResponse.json({ error: 'Failed to create business.' }, { status: 500 })
     }
     business = newBiz
+  } else if (!business.referred_by_code && refStamp) {
+    const { data: stamped } = await supabase
+      .from('businesses')
+      .update({ referred_by_code: refStamp })
+      .eq('id', business.id)
+      .is('referred_by_code', null)
+      .select('id, referred_by_code')
+      .single()
+    if (stamped) business = stamped
   }
 
   let access
