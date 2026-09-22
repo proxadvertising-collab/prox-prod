@@ -11,9 +11,13 @@ export default function LoginPage() {
   const isDark = theme === 'dark'
   const supabase = useMemo(() => createBrowserClient(), [])
   const [loggedIn, setLoggedIn] = useState(false)
+  const [authError, setAuthError] = useState(false)
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setLoggedIn(!!data.user))
+    if (new URLSearchParams(window.location.search).get('error') === 'auth') {
+      setAuthError(true)
+    }
   }, [supabase])
   const text = isDark ? '#F7F3FB' : '#1A1523'
   const muted = isDark ? 'rgba(247,243,251,0.62)' : 'rgba(26,21,35,0.58)'
@@ -48,6 +52,11 @@ export default function LoginPage() {
           <p className="mt-1 text-sm text-center" style={{ color: muted }}>
             Get Local deals near you
           </p>
+          {authError ? (
+            <p className="mt-3 text-xs text-center font-medium" style={{ color: '#F25A17' }}>
+              That email link didn’t work. Sign in again.
+            </p>
+          ) : null}
         </div>
         <AuthButton initialTab="signin" />
       </div>

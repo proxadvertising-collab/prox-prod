@@ -37,6 +37,7 @@ export default function AuthButton({ initialTab = 'signin' }: { initialTab?: 'si
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [nextPath, setNextPath] = useState('/')
+  const [checkEmail, setCheckEmail] = useState(false)
 
   const text = isDark ? '#F7F3FB' : '#1A1523'
   const muted = isDark ? 'rgba(247,243,251,0.6)' : 'rgba(26,21,35,0.55)'
@@ -99,7 +100,7 @@ export default function AuthButton({ initialTab = 'signin' }: { initialTab?: 'si
     })
     setLoading(false)
     if (otpError) setError(otpError.message)
-    else setMessage('Check your email for the magic link.')
+    else setCheckEmail(true)
   }
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -107,7 +108,11 @@ export default function AuthButton({ initialTab = 'signin' }: { initialTab?: 'si
     setLoading(true)
     setError('')
     setMessage('')
-    const { data, error: signError } = await supabase.auth.signUp({ email, password })
+    const { data, error: signError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: callbackUrl() },
+    })
     if (signError) {
       setLoading(false)
       setError(signError.message)
@@ -136,8 +141,51 @@ export default function AuthButton({ initialTab = 'signin' }: { initialTab?: 'si
     }
 
     setLoading(false)
+    if (!data.session) {
+      setCheckEmail(true)
+      return
+    }
     router.push(nextPath)
     router.refresh()
+  }
+
+  if (checkEmail) {
+    return (
+      <div className="w-full text-center space-y-4">
+        <h2 className="text-lg font-black" style={{ color: text }}>
+          Check your email
+        </h2>
+        <p className="text-sm" style={{ color: muted }}>
+          We sent a link to {email || 'your inbox'}. Open it to finish signing in.
+        </p>
+        {error ? (
+          <p className="text-xs font-medium" style={{ color: '#F25A17' }}>
+            {error}
+          </p>
+        ) : null}
+        <a
+          href={email ? `mailto:${email}` : 'mailto:'}
+          className="w-full h-12 rounded-xl text-sm font-bold text-white flex items-center justify-center"
+          style={{ background: '#F25A17' }}
+        >
+          Open email app
+        </a>
+        <button
+          type="button"
+          onClick={() => {
+            setCheckEmail(false)
+            setTab('signin')
+          }}
+          className="w-full h-12 rounded-xl text-sm font-semibold"
+          style={{
+            color: text,
+            border: isDark ? '1px solid rgba(255,255,255,0.18)' : '1px solid rgba(26,21,35,0.16)',
+          }}
+        >
+          I’ve verified — Sign in
+        </button>
+      </div>
+    )
   }
 
   return (

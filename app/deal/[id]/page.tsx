@@ -24,6 +24,7 @@ export default function DealDetailPage() {
   const [loading, setLoading] = useState(true)
   const [notFound, setNotFound] = useState(false)
   const [copied, setCopied] = useState(false)
+  const [shareHint, setShareHint] = useState('')
   const [userLat, setUserLat] = useState<number | null>(null)
   const [userLng, setUserLng] = useState<number | null>(null)
 
@@ -80,15 +81,27 @@ export default function DealDetailPage() {
     openGoNow(deal.lat, deal.lng, meters)
   }
 
-  const handleShare = () => {
+  const handleShare = async () => {
     if (!deal) return
-    const shareUrl = `https://prox.to/d/${deal.id}`
+    const shareUrl = `${window.location.origin}/deal/${deal.id}`
     if (navigator.share) {
-      navigator.share({ title: deal.title, text: deal.description, url: shareUrl }).catch(() => {})
-    } else {
-      navigator.clipboard.writeText(shareUrl)
+      try {
+        await navigator.share({ title: deal.title, text: deal.description, url: shareUrl })
+        return
+      } catch {
+        /* cancelled or unsupported — fall through */
+      }
+    }
+    try {
+      await navigator.clipboard.writeText(shareUrl)
       setCopied(true)
+      setShareHint('')
       setTimeout(() => setCopied(false), 2000)
+    } catch {
+      setShareHint(shareUrl)
+      try {
+        window.prompt('Copy failed — long-press to copy', shareUrl)
+      } catch {}
     }
   }
 
@@ -216,6 +229,17 @@ export default function DealDetailPage() {
               >
                 {copied ? 'Link Copied' : 'Share Deal'}
               </button>
+              {shareHint ? (
+                <p className="text-xs text-center" style={{ color: textColor }}>
+                  Copy failed — long-press to copy
+                  <input
+                    readOnly
+                    value={shareHint}
+                    className="mt-2 w-full px-3 py-2 rounded-xl text-xs"
+                    onFocus={(e) => e.currentTarget.select()}
+                  />
+                </p>
+              ) : null}
             </div>
           </div>
         </div>
