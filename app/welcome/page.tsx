@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo } from 'react'
 import { useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/client'
 import { useTheme } from '@/contexts/ThemeContext'
@@ -29,7 +29,6 @@ export default function WelcomePage() {
   const isDark = theme === 'dark'
   const router = useRouter()
   const supabase = useMemo(() => createBrowserClient(), [])
-  const [picked, setPicked] = useState<ProxDoor | null>(null)
   const text = isDark ? '#F7F3FB' : '#1A1523'
   const muted = isDark ? 'rgba(247,243,251,0.62)' : 'rgba(26,21,35,0.58)'
   const card = {
@@ -53,8 +52,7 @@ export default function WelcomePage() {
     })
   }, [router, supabase])
 
-  const openProx = async () => {
-    if (!picked) return
+  const openDoor = async (picked: ProxDoor) => {
     setDoor(picked)
     if (picked === 'shopper') {
       router.replace('/')
@@ -67,8 +65,6 @@ export default function WelcomePage() {
       router.replace(data.user ? '/account' : '/login?next=/account')
     }
   }
-
-  const pickedDoor = DOORS.find((d) => d.id === picked)
 
   return (
     <main className="px-4 py-8">
@@ -89,48 +85,24 @@ export default function WelcomePage() {
         </h1>
       </div>
 
-      {!picked ? (
-        <div className="flex flex-col gap-3">
-          {DOORS.map((d) => (
-            <button
-              key={d.id}
-              type="button"
-              onClick={() => setPicked(d.id)}
-              className="w-full min-h-16 rounded-2xl text-left px-5 py-4"
-              style={card}
-            >
-              <span className="text-base font-black" style={{ color: text }}>
-                {d.title}
-              </span>
-            </button>
-          ))}
-        </div>
-      ) : (
-        <div className="rounded-2xl p-6" style={card}>
-          <p className="text-sm font-black" style={{ color: text }}>
-            {pickedDoor?.title}
-          </p>
-          <p className="mt-2 text-sm leading-relaxed" style={{ color: muted }}>
-            {pickedDoor?.copy}
-          </p>
+      <div className="flex flex-col gap-3">
+        {DOORS.map((d) => (
           <button
+            key={d.id}
             type="button"
-            onClick={openProx}
-            className="mt-6 w-full h-12 rounded-xl text-sm font-bold text-white"
-            style={{ background: '#F25A17' }}
+            onClick={() => openDoor(d.id)}
+            className="w-full rounded-2xl text-left px-5 py-4"
+            style={card}
           >
-            Open Prox
+            <span className="text-base font-black block" style={{ color: text }}>
+              {d.title}
+            </span>
+            <span className="mt-1 text-sm leading-relaxed block" style={{ color: muted }}>
+              {d.copy}
+            </span>
           </button>
-          <button
-            type="button"
-            onClick={() => setPicked(null)}
-            className="mt-3 w-full text-xs font-semibold"
-            style={{ color: muted }}
-          >
-            Back
-          </button>
-        </div>
-      )}
+        ))}
+      </div>
     </main>
   )
 }
