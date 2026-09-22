@@ -4,6 +4,7 @@ import React, { useMemo, useState } from 'react'
 import { createBrowserClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import LocationButton from '@/components/LocationButton'
+import { POST_TYPES, postTypeLabel, type PostType } from '@/lib/post-type'
 
 const CATEGORY_OPTIONS = [
   'Restaurants', 'Coffee', 'Bars', 'Shopping', 'Services',
@@ -11,7 +12,7 @@ const CATEGORY_OPTIONS = [
 ]
 
 export default function PostDealPage() {
-  const [postType, setPostType] = useState<'deal' | 'open'>('deal')
+  const [postType, setPostType] = useState<PostType>('deal')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
   const [priceDisplay, setPriceDisplay] = useState('')
@@ -74,8 +75,8 @@ export default function PostDealPage() {
         title,
         description,
         post_type: postType,
-        price_display: postType === 'deal' ? priceDisplay : null,
-        original_price: postType === 'deal' ? originalPrice || null : null,
+        price_display: postType === 'deal' || postType === 'special' ? priceDisplay : null,
+        original_price: postType === 'deal' || postType === 'special' ? originalPrice || null : null,
         categories,
         image_url: imageUrl,
         lat,
@@ -164,10 +165,29 @@ export default function PostDealPage() {
   return (
     <main className="min-h-screen bg-white max-w-[430px] mx-auto px-4 py-8 pb-32 shadow-2xl flex flex-col">
       <h1 className="text-2xl font-black text-gray-900 mb-6">Post Live Update</h1>
-      <div className="flex bg-gray-100 p-1 rounded-2xl mb-6">
-        <button type="button" onClick={() => setPostType('deal')} className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${postType === 'deal' ? 'bg-white shadow-sm text-black' : 'text-gray-500'}`}>🏷️ Deal / Offer</button>
-        <button type="button" onClick={() => setPostType('open')} className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all ${postType === 'open' ? 'bg-white shadow-sm text-black' : 'text-gray-500'}`}>🟢 We're Open</button>
+      <div className="grid grid-cols-2 gap-2 mb-6">
+        {POST_TYPES.map((t) => (
+          <button
+            key={t}
+            type="button"
+            onClick={() => setPostType(t)}
+            className={`py-2.5 rounded-xl text-xs font-bold border ${
+              postType === t ? 'bg-black text-white border-black' : 'bg-white text-gray-600 border-gray-200'
+            }`}
+          >
+            {postTypeLabel(t)}
+          </button>
+        ))}
       </div>
+      <p className="text-xs text-gray-500 -mt-4 mb-6">
+        {postType === 'open'
+          ? "We're open — photo and caption."
+          : postType === 'special'
+            ? 'Limited-time offer.'
+            : postType === 'closed_early'
+              ? 'Closing early — come now.'
+              : 'Deal with a price.'}
+      </p>
       {error && <div className="mb-4 p-3 bg-red-50 text-red-700 text-sm rounded-xl">{error}</div>}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
@@ -205,7 +225,7 @@ export default function PostDealPage() {
           <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Description</label>
           <textarea required rows={3} value={description} onChange={(e) => setDescription(e.target.value)} className="w-full px-3 py-2.5 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-black" placeholder="Details..." />
         </div>
-        {postType === 'deal' && (
+        {(postType === 'deal' || postType === 'special') && (
           <div className="grid grid-cols-2 gap-3">
             <div>
               <label className="block text-xs font-bold text-gray-700 uppercase mb-1">Price</label>

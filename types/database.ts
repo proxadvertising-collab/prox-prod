@@ -38,7 +38,7 @@ export interface Deal {
   lng: number
   expires_at?: string
   is_active: boolean
-  post_type?: 'deal' | 'open'
+  post_type?: 'deal' | 'open' | 'special' | 'closed_early'
   categories?: string[]
   image_url?: string
   created_at?: string

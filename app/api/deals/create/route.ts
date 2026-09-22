@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase/server'
 import { canPostDeal } from '@/lib/billing/subscription'
+import { isPostType } from '@/lib/post-type'
 
 export async function POST(request: Request) {
   const supabase = await createServerClient()
@@ -26,7 +27,11 @@ export async function POST(request: Request) {
 
   const title = String(body.title || '').trim()
   const description = String(body.description || '').trim()
-  const postType = body.post_type === 'open' ? 'open' : 'deal'
+  const postTypeRaw = String(body.post_type || 'deal')
+  if (!isPostType(postTypeRaw)) {
+    return NextResponse.json({ error: 'Unknown post type.' }, { status: 400 })
+  }
+  const postType = postTypeRaw
   if (!title || !description) {
     return NextResponse.json({ error: 'Title and description are required.' }, { status: 400 })
   }
@@ -88,8 +93,8 @@ export async function POST(request: Request) {
       owner_id: user.id,
       title,
       description,
-      price_display: postType === 'deal' ? body.price_display || null : null,
-      original_price: postType === 'deal' ? body.original_price || null : null,
+      price_display: postType === 'deal' || postType === 'special' ? body.price_display || null : null,
+      original_price: postType === 'deal' || postType === 'special' ? body.original_price || null : null,
       post_type: postType,
       categories: Array.isArray(body.categories) ? body.categories : [],
       image_url: body.image_url || null,

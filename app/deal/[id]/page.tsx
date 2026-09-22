@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation'
 import { createBrowserClient } from '@/lib/supabase/client'
 import { calculateDistance, formatDistance } from '@/lib/distance'
 import { openGoNow } from '@/lib/maps'
+import { postTypeLabel } from '@/lib/post-type'
 import { useTheme } from '@/contexts/ThemeContext'
 import type { Deal, Profile, Business } from '@/types/database'
 
@@ -153,7 +154,7 @@ export default function DealDetailPage() {
                     color: deal.post_type === 'open' ? '#a78bfa' : '#60a5fa',
                   }}
                 >
-                  {deal.post_type === 'open' ? "We're Open" : 'Deal'}
+                  {postTypeLabel(deal.post_type)}
                 </span>
                 {distance !== null && (
                   <span

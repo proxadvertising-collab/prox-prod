@@ -6,6 +6,7 @@ import { calculateDistance } from '@/lib/distance'
 import { openGoNow } from '@/lib/maps'
 import { useTheme } from '@/contexts/ThemeContext'
 import ProfileSocials from '@/components/ProfileSocials'
+import { postTypeLabel } from '@/lib/post-type'
 
 const METERS_PER_MI = 1609.34
 const WALK_M_PER_MIN = 80
@@ -23,7 +24,6 @@ function walkMins(meters: number): number {
 }
 
 function statusLine(deal: any): string | null {
-  if (deal.post_type === 'open') return 'Open'
   if (!deal.expires_at) return null
   const diff = new Date(deal.expires_at).getTime() - Date.now()
   if (diff <= 0) return null
@@ -116,6 +116,9 @@ export default function DealCard({ deal, userLat, userLng }: DealCardProps) {
             {price}
           </p>
         ) : null}
+        <p className="text-[11px] font-semibold line-clamp-1" style={{ color: '#5D20B5' }}>
+          {postTypeLabel(deal.post_type)}
+        </p>
         {status ? (
           <p className="text-[11px] font-medium line-clamp-1" style={{ color: muted }}>
             {status}
