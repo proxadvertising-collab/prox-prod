@@ -110,7 +110,7 @@ export default function BusinessHome() {
           <p className="text-xs text-gray-500">{user?.email}</p>
         </div>
         <button onClick={handleLogout} className="bg-red-50 text-red-600 hover:bg-red-100 font-bold text-xs px-3 py-2 rounded-xl transition-colors">
-          Logout
+          Sign out
         </button>
       </div>
 
@@ -156,7 +156,7 @@ export default function BusinessHome() {
             <p className="text-xs text-gray-600 line-clamp-2">{activeDeal.description}</p>
           </div>
         ) : (
-          <p className="text-xs text-gray-400">You currently have no active live updates.</p>
+          <p className="text-xs text-gray-400">Nothing live — post something locals can walk to.</p>
         )}
       </div>
 

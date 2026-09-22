@@ -363,10 +363,7 @@ export default function FeedPage() {
         ) : processedDeals.length === 0 ? (
           <div className="text-center py-20 p-8 rounded-2xl" style={{ background: surface, border }}>
             <p className="font-bold" style={{ color: textColor }}>
-              No deals in range
-            </p>
-            <p className="mt-2 text-sm opacity-70" style={{ color: textColor }}>
-              Try widening the distance slider
+              Nothing nearby yet — widen the distance or check back soon.
             </p>
           </div>
         ) : (

@@ -46,6 +46,9 @@ export default function ReferralCard({ referralCode, credits, referredCount }: R
           <span className="text-gray-600 font-medium">Referred Owners:</span>
           <span className="font-black text-gray-900">{referredCount}</span>
         </div>
+        {credits === 0 && referredCount === 0 ? (
+          <p className="text-xs text-gray-500 pt-1">Share your QR — credits show up when a business pays.</p>
+        ) : null}
       </div>
 
       <div className="space-y-1">
